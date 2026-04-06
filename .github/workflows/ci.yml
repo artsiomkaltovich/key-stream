@@ -28,6 +28,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
       - name: Build
-        run: cargo build --verbose
+        run: cargo build --verbose --locked
       - name: Run tests
-        run: cargo test --all --verbose
+        run: cargo test --all --verbose --locked
