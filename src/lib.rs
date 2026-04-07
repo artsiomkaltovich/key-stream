@@ -78,8 +78,8 @@ impl<K: Key, V: Value> KeySender<K, V> {
 
     pub async fn subscribe(&self, key: K) -> KeyReceiver<K, V> {
         let streams = self.streams.read().await;
-        if let Some(sender) = streams.get(&key) {
-            self.create_receiver(key, sender.subscribe())
+        let inner = if let Some(sender) = streams.get(&key) {
+            sender.subscribe()
         } else {
             drop(streams);
             let mut streams = self.streams.write().await;
@@ -87,8 +87,9 @@ impl<K: Key, V: Value> KeySender<K, V> {
                 let (sender, _) = broadcast::channel(self.broadcast_capacity);
                 sender
             });
-            self.create_receiver(key, sender.subscribe())
-        }
+            sender.subscribe()
+        };
+        self.create_receiver(key, inner)
     }
 
     pub async fn n_keys(&self) -> usize {
