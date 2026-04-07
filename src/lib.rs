@@ -173,7 +173,7 @@ impl<K: Key, V: Value> KeyReceiver<K, V> {
         self.receiver.blocking_recv()
     }
 
-    pub fn stream(&mut self) -> impl Stream<Item = Result<V, RecvError>> {
+    pub fn stream(&mut self) -> impl Stream<Item = Result<V, RecvError>> + '_ {
         futures::stream::unfold(self, |receiver| async {
             let item = receiver.recv().await;
             Some((item, receiver))
