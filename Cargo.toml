@@ -3,6 +3,7 @@ name = "key-stream"
 description = "A library for async key streaming."
 version = "0.9.0"
 edition = "2024"
+license = "MIT"
 
 [dependencies]
 futures = { version = "0.3", default-features = false }
