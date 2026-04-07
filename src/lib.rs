@@ -3,12 +3,36 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tokio::sync::{RwLock, broadcast};
 
+/// Trait bound for types usable as keys in [`KeyStream`].
+/// Must be hashable, comparable, cloneable, thread-safe, and `'static`.
 pub trait Key: Hash + Eq + Clone + Send + Sync + 'static {}
+
+/// Trait bound for types usable as values in [`KeyStream`].
+/// Must be cloneable, thread-safe, and `'static`.
 pub trait Value: Clone + Send + 'static {}
+
 impl<T: Clone + Send + 'static> Value for T {}
 impl<T: std::hash::Hash + Eq + Clone + Send + Sync + 'static> Key for T {}
+
 type Streams<K, V> = Arc<RwLock<HashMap<K, broadcast::Sender<V>>>>;
 
+/// The main entry point for key-based async message streaming.
+///
+/// Use [`KeyStream::new`] to create, then call [`KeyStream::sender`] to get a sender handle.
+///
+/// # Example
+/// ```
+/// use key_stream::KeyStream;
+/// use tokio;
+/// # #[tokio::main(flavor = "current_thread")]
+/// # async fn main() {
+///     let key_stream = KeyStream::<String, String>::new(10);
+///     let sender = key_stream.sender();
+///     let mut receiver = sender.subscribe("1".to_string()).await;
+///     sender.send(&"1".to_string(), "value".to_string()).await.unwrap();
+///     assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
+/// # }
+/// ```
 pub struct KeyStream<K: Key, V: Value> {
     broadcast_capacity: usize,
     streams: Streams<K, V>,
@@ -16,12 +40,18 @@ pub struct KeyStream<K: Key, V: Value> {
     drop_keys_task: Option<tokio::task::JoinHandle<()>>,
 }
 
+/// Handle for sending and subscribing to messages by key.
+///
+/// Created via [`KeyStream::sender`].
 pub struct KeySender<K: Key, V: Value> {
     streams: Streams<K, V>,
     broadcast_capacity: usize,
     drop_notify: UnboundedSender<K>,
 }
 
+/// A receiver for messages for a specific key.
+///
+/// Created via [`KeySender::subscribe`].
 pub struct KeyReceiver<K: Key, V: Value> {
     key: K,
     receiver: broadcast::Receiver<V>,
@@ -29,6 +59,7 @@ pub struct KeyReceiver<K: Key, V: Value> {
 }
 
 impl<K: Key, V: Value> KeyStream<K, V> {
+    /// Create a new [`KeyStream`] with the given broadcast channel capacity per key.
     pub fn new(broadcast_capacity: usize) -> Self {
         let (sender, receiver) = unbounded_channel::<K>();
         let streams = Arc::new(RwLock::new(HashMap::<K, broadcast::Sender<V>>::new()));
@@ -41,6 +72,7 @@ impl<K: Key, V: Value> KeyStream<K, V> {
         }
     }
 
+    /// Get a sender handle for publishing and subscribing to keys.
     pub fn sender(&self) -> KeySender<K, V> {
         KeySender::new(
             Arc::clone(&self.streams),
@@ -49,10 +81,12 @@ impl<K: Key, V: Value> KeyStream<K, V> {
         )
     }
 
+    /// Get the number of keys currently tracked.
     pub async fn n_keys(&self) -> usize {
         self.streams.read().await.len()
     }
 
+    /// Get the current capacity of the keys map.
     pub async fn keys_capacity(&self) -> usize {
         self.streams.read().await.capacity()
     }
@@ -67,6 +101,9 @@ impl<K: Key, V: Value> KeySender<K, V> {
         }
     }
 
+    /// Send a value to all receivers subscribed to the given key.
+    ///
+    /// Returns the number of receivers the message was sent to, or 0 if none.
     pub async fn send(&self, key: &K, value: V) -> Result<usize, broadcast::error::SendError<V>> {
         let streams = self.streams.read().await;
         if let Some(sender) = streams.get(key) {
@@ -76,6 +113,9 @@ impl<K: Key, V: Value> KeySender<K, V> {
         }
     }
 
+    /// Subscribe to messages for the given key.
+    ///
+    /// Returns a [`KeyReceiver`] for receiving messages.
     pub async fn subscribe(&self, key: K) -> KeyReceiver<K, V> {
         let streams = self.streams.read().await;
         let inner = if let Some(sender) = streams.get(&key) {
@@ -92,10 +132,12 @@ impl<K: Key, V: Value> KeySender<K, V> {
         self.create_receiver(key, inner)
     }
 
+    /// Get the number of keys currently tracked.
     pub async fn n_keys(&self) -> usize {
         self.streams.read().await.len()
     }
 
+    /// Get the current capacity of the keys map.
     pub async fn key_capacity(&self) -> usize {
         self.streams.read().await.capacity()
     }
@@ -110,14 +152,21 @@ impl<K: Key, V: Value> KeySender<K, V> {
 }
 
 impl<K: Key, V: Value> KeyReceiver<K, V> {
+    /// Receive the next message for this key, waiting asynchronously.
+    /// See, tokio::sync::broadcast::Receiver::recv for more details.
     pub async fn recv(&mut self) -> Result<V, broadcast::error::RecvError> {
         self.receiver.recv().await
     }
 
+    /// Try to receive the next message for this key without waiting..
+    /// See, tokio::sync::broadcast::Receiver::try_recv for more details.
     pub async fn try_recv(&mut self) -> Result<V, broadcast::error::TryRecvError> {
         self.receiver.try_recv()
     }
 
+    /// Receive the next message for this key, blocking the current thread.
+    /// Only use in synchronous contexts.
+    /// See, tokio::sync::broadcast::Receiver::blocking_recv for more details.
     pub fn blocking_recv(&mut self) -> Result<V, broadcast::error::RecvError> {
         self.receiver.blocking_recv()
     }
