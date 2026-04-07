@@ -1,10 +1,61 @@
+//! Async key-based message streaming library.
+//!
+//! Enables sending messages to multiple receivers, grouped by keys, with automatic cleanup of unused keys.
+//! No messages are sent until a key is subscribed to, and keys are automatically removed when all receivers are dropped.
+//! Cleanup is performed by a background task, so task switching is required for timely removal.
+//! The memory usage of the keys map is optimized by shrinking it when many keys are removed.
+//!
+//! The main entry point is [`KeyStream`], created with [`KeyStream::new`].
+//! It manages the keys and contains a background task for cleaning up unused keys.
+//! The cleanup task is immediately notified when a key is dropped, rather than relying on periodic checks.
+//! Use [`KeyStream::sender`] to obtain a sender handle for sending messages and subscribing to keys.
+//! Use [`KeySender::send`] to send messages to a key, and [`KeySender::subscribe`] to subscribe to a key and receive a [`KeyReceiver`] for that key.
+//! [`KeyReceiver::recv`] can be used to receive messages for a key, waiting asynchronously until a message is available.
+//! [`KeyReceiver`] can also be converted into a stream of messages using [`KeyReceiver::to_async_stream`].
+//!
+//! # Examples
+//!
+//! ```
+//! use key_stream::KeyStream;
+//! use tokio;
+//!
+//! # #[tokio::main(flavor = "current_thread")]
+//! # async fn main() {
+//! let key_stream = KeyStream::<i32, String>::new(10);
+//! let sender = key_stream.sender();
+//! let mut receiver = sender.subscribe(1).await;
+//! sender.send(&1, "value".to_string()).await.unwrap();
+//! assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
+//! # }
+//! ```
+//!
+//! ## Key cleanup example
+//!
+//! ```rust
+//! use key_stream::KeyStream;
+//! # #[tokio::main(flavor = "current_thread")]
+//! # async fn main() {
+//! let key_stream = KeyStream::<i32, String>::new(10);
+//! let sender = key_stream.sender();
+//! let receiver = sender.subscribe(1).await;
+//! assert_eq!(key_stream.n_keys().await, 1);
+//! drop(receiver);
+//! // give the key drop task a chance to run
+//! tokio::task::yield_now().await;
+//! let result = sender
+//!     .send(&1, "value".to_string())
+//!     .await
+//!     .unwrap();
+//! assert_eq!(result, 0);
+//! assert_eq!(key_stream.n_keys().await, 0);
+//! # }
+//! ```
 use futures::Stream;
 use std::hash::Hash;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tokio::sync::{RwLock, broadcast};
-use tokio::time::{Duration, timeout};
 
 /// Trait bound for types usable as keys in [`KeyStream`].
 /// Must be hashable, comparable, cloneable, thread-safe, and `'static`.
@@ -29,11 +80,11 @@ type Streams<K, V> = Arc<RwLock<HashMap<K, broadcast::Sender<V>>>>;
 /// use tokio;
 /// # #[tokio::main(flavor = "current_thread")]
 /// # async fn main() {
-///     let key_stream = KeyStream::<String, String>::new(10);
-///     let sender = key_stream.sender();
-///     let mut receiver = sender.subscribe("1".to_string()).await;
-///     sender.send(&"1".to_string(), "value".to_string()).await.unwrap();
-///     assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
+/// let key_stream = KeyStream::<i32, String>::new(10);
+/// let sender = key_stream.sender();
+/// let mut receiver = sender.subscribe(1).await;
+/// sender.send(&1, "value".to_string()).await.unwrap();
+/// assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
 /// # }
 /// ```
 pub struct KeyStream<K: Key, V: Value> {
@@ -175,7 +226,7 @@ impl<K: Key, V: Value> KeyReceiver<K, V> {
     }
 
     /// Consume this receiver and convert it into a stream of messages for this key.
-    pub fn to_stream(self) -> impl Stream<Item = Result<V, RecvError>> {
+    pub fn to_async_stream(self) -> impl Stream<Item = Result<V, RecvError>> {
         futures::stream::unfold(self, |mut receiver| async {
             let item = receiver.recv().await;
             Some((item, receiver))
@@ -236,6 +287,7 @@ fn optimize_dict_mem<K: Key, V: Value>(streams: &mut HashMap<K, broadcast::Sende
 mod tests {
     use std::pin::Pin;
     use tokio::task::JoinSet;
+    use tokio::time::{Duration, timeout};
 
     use super::*;
 
@@ -599,7 +651,7 @@ mod tests {
             .send(&"1".to_string(), "value1".to_string())
             .await
             .unwrap();
-        let stream = receiver.to_stream();
+        let stream = receiver.to_async_stream();
         let stream = Box::pin(stream) as WatchStream;
         sender
             .send(&"1".to_string(), "value2".to_string())
