@@ -9,4 +9,4 @@ futures = { version = "0.3", default-features = false }
 tokio = { version = "1", features = ["sync", "rt"] }
 
 [dev-dependencies]
-tokio = { version = "1", features = ["macros"] }
+tokio = { version = "1", features = ["macros", "time"] }

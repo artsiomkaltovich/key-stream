@@ -4,6 +4,7 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tokio::sync::{RwLock, broadcast};
+use tokio::time::{Duration, timeout};
 
 /// Trait bound for types usable as keys in [`KeyStream`].
 /// Must be hashable, comparable, cloneable, thread-safe, and `'static`.
@@ -173,8 +174,9 @@ impl<K: Key, V: Value> KeyReceiver<K, V> {
         self.receiver.blocking_recv()
     }
 
-    pub fn stream(&mut self) -> impl Stream<Item = Result<V, RecvError>> + '_ {
-        futures::stream::unfold(self, |receiver| async {
+    /// Consume this receiver and convert it into a stream of messages for this key.
+    pub fn to_stream(self) -> impl Stream<Item = Result<V, RecvError>> {
+        futures::stream::unfold(self, |mut receiver| async {
             let item = receiver.recv().await;
             Some((item, receiver))
         })
@@ -232,6 +234,7 @@ fn optimize_dict_mem<K: Key, V: Value>(streams: &mut HashMap<K, broadcast::Sende
 
 #[cfg(test)]
 mod tests {
+    use std::pin::Pin;
     use tokio::task::JoinSet;
 
     use super::*;
@@ -581,6 +584,32 @@ mod tests {
         assert_eq!(
             key_stream.keys_capacity().await,
             sender2.key_capacity().await
+        );
+    }
+
+    #[tokio::test]
+    async fn test_stream() {
+        use futures::StreamExt;
+        type WatchStream =
+            Pin<Box<dyn futures::Stream<Item = Result<String, RecvError>> + Send + 'static>>;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let receiver = sender.subscribe("1".to_string()).await;
+        sender
+            .send(&"1".to_string(), "value1".to_string())
+            .await
+            .unwrap();
+        let stream = receiver.to_stream();
+        let stream = Box::pin(stream) as WatchStream;
+        sender
+            .send(&"1".to_string(), "value2".to_string())
+            .await
+            .unwrap();
+        let msg = timeout(Duration::from_secs(1), stream.take(2).collect::<Vec<_>>()).await;
+        let msg = msg.expect("timeout");
+        assert_eq!(
+            msg,
+            vec![Ok("value1".to_string()), Ok("value2".to_string())]
         );
     }
 }
