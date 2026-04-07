@@ -1,9 +1,11 @@
 [package]
 name = "key-stream"
 description = "A library for async key streaming."
+authors = ["Artsion Kaltovich <artsion.kaltovich@gmail.com>"]
 version = "0.9.1"
 edition = "2024"
 license = "MIT"
+readme = "README.md"
 
 [dependencies]
 futures = { version = "0.3", default-features = false }
