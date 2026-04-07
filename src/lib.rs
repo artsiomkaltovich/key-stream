@@ -1,5 +1,7 @@
+use futures::Stream;
 use std::hash::Hash;
 use std::{collections::HashMap, sync::Arc};
+use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tokio::sync::{RwLock, broadcast};
 
@@ -170,13 +172,12 @@ impl<K: Key, V: Value> KeyReceiver<K, V> {
     pub fn blocking_recv(&mut self) -> Result<V, broadcast::error::RecvError> {
         self.receiver.blocking_recv()
     }
-}
 
-impl<K: Key, V: Value> Drop for KeyStream<K, V> {
-    fn drop(&mut self) {
-        if let Some(task) = self.drop_keys_task.take() {
-            task.abort();
-        }
+    pub fn stream(&mut self) -> impl Stream<Item = Result<V, RecvError>> {
+        futures::stream::unfold(self, |receiver| async {
+            let item = receiver.recv().await;
+            Some((item, receiver))
+        })
     }
 }
 
@@ -186,6 +187,14 @@ impl<K: Key, V: Value> Clone for KeySender<K, V> {
             streams: Arc::clone(&self.streams),
             broadcast_capacity: self.broadcast_capacity,
             drop_notify: self.drop_notify.clone(),
+        }
+    }
+}
+
+impl<K: Key, V: Value> Drop for KeyStream<K, V> {
+    fn drop(&mut self) {
+        if let Some(task) = self.drop_keys_task.take() {
+            task.abort();
         }
     }
 }

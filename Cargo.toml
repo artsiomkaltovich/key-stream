@@ -5,6 +5,7 @@ version = "0.9.0"
 edition = "2024"
 
 [dependencies]
+futures = { version = "0.3", default-features = false }
 tokio = { version = "1", features = ["sync", "rt"] }
 
 [dev-dependencies]
