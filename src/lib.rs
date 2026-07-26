@@ -141,7 +141,7 @@ impl<K: Key, V: Value> KeyStream<K, V> {
     }
 
     /// Get the current capacity of the keys map.
-    pub async fn keys_capacity(&self) -> usize {
+    pub async fn key_capacity(&self) -> usize {
         self.streams.read().await.capacity()
     }
 }
@@ -548,6 +548,38 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_resubscribe_before_cleanup_runs() {
+        // Interleaved drop/resubscribe on the same key: dropping receiver1 queues a
+        // cleanup notification, but we resubscribe *before* the cleanup task runs.
+        // The stale notification must NOT remove the key, because receiver2 is live.
+        // This exercises the `receiver_count() == 0` re-check under the write lock.
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let receiver1 = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
+
+        // Drop receiver1 (queues a cleanup notification for key "1") and immediately
+        // resubscribe without yielding, so the cleanup task has not processed the
+        // notification yet when the key is re-registered.
+        drop(receiver1);
+        let mut receiver2 = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
+
+        // Now let the cleanup task process the stale notification. It must see
+        // receiver2 still alive (receiver_count() == 1) and keep the key.
+        tokio::task::yield_now().await;
+        assert_eq!(key_stream.n_keys().await, 1);
+
+        // The key must still deliver messages to the live receiver.
+        let result = sender
+            .send(&"1".to_string(), "value".to_string())
+            .await
+            .unwrap();
+        assert_eq!(result, 1);
+        assert_eq!(receiver2.recv().await.unwrap(), "value".to_string());
+    }
+
+    #[tokio::test]
     async fn test_shrink_dict() {
         let key_stream = KeyStream::<i32, String>::new(1);
         let sender = key_stream.sender();
@@ -565,7 +597,7 @@ mod tests {
         subs.drain(0..400);
         // give the on_drop task a chance to run
         tokio::task::yield_now().await;
-        assert!(key_stream.keys_capacity().await < 500);
+        assert!(key_stream.key_capacity().await < 500);
     }
 
     #[tokio::test]
@@ -616,11 +648,11 @@ mod tests {
         assert_eq!(sender1.n_keys().await, 0);
         assert_eq!(sender2.n_keys().await, 0);
         assert_eq!(
-            key_stream.keys_capacity().await,
+            key_stream.key_capacity().await,
             sender1.key_capacity().await
         );
         assert_eq!(
-            key_stream.keys_capacity().await,
+            key_stream.key_capacity().await,
             sender2.key_capacity().await
         );
         let _receiver1 = sender1.subscribe("1".to_string()).await;
@@ -630,11 +662,11 @@ mod tests {
         assert_eq!(sender1.n_keys().await, 3);
         assert_eq!(sender2.n_keys().await, 3);
         assert_eq!(
-            key_stream.keys_capacity().await,
+            key_stream.key_capacity().await,
             sender1.key_capacity().await
         );
         assert_eq!(
-            key_stream.keys_capacity().await,
+            key_stream.key_capacity().await,
             sender2.key_capacity().await
         );
     }
