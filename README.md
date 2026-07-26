@@ -27,8 +27,8 @@ let mut receiver = sender.subscribe("1".to_string()).await;
 sender
     .send(&"1".to_string(), "value".to_string())
     .await
-    .except("send failed");
-assert_eq!(receiver.recv().await.except("recv failed"), "value".to_string());
+    .expect("send failed");
+assert_eq!(receiver.recv().await.expect("recv failed"), "value".to_string());
 ```
 
 ### Receiver Dropping
