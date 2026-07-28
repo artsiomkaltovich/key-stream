@@ -2,18 +2,10 @@ name: Benchmarks
 
 on:
   workflow_dispatch:
-    inputs:
-      mode:
-        description: "Benchmark mode"
-        required: true
-        default: "full"
-        type: choice
-        options:
-          - quick
-          - full
+  push:
+    branches: [master]
   pull_request:
     branches: [master]
-    types: [opened, reopened, ready_for_review]
 
 jobs:
   bench:
