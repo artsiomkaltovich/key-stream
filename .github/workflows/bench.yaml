@@ -13,6 +13,8 @@ on:
           - full
   push:
     branches: [master]
+  pull_request:
+    branches: [master]
 
 jobs:
   bench:
@@ -33,7 +35,7 @@ jobs:
             ${{ runner.os }}-cargo-
       - name: Run benchmarks
         env:
-          BENCH_MODE: ${{ github.event.inputs.mode || 'full' }}
+          BENCH_MODE: ${{ github.event_name == 'pull_request' && 'quick' || github.event.inputs.mode || 'full' }}
         run: |
           if [ "$BENCH_MODE" = "quick" ]; then
             cargo bench --bench key_stream -- --quick | tee bench-output.txt
