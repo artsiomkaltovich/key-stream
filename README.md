@@ -26,8 +26,7 @@ let sender = key_stream.sender();
 let mut receiver = sender.subscribe("1".to_string()).await;
 sender
     .send(&"1".to_string(), "value".to_string())
-    .await
-    .expect("send failed");
+    .await;
 assert_eq!(receiver.recv().await.expect("recv failed"), "value".to_string());
 ```
 
@@ -47,8 +46,7 @@ drop(receiver);
 tokio::task::yield_now().await;
 let result = sender
     .send(&"1".to_string(), "value".to_string())
-    .await
-    .unwrap();
+    .await;
 assert_eq!(result, 0);
 assert_eq!(key_stream.n_keys().await, 0);
 ```
