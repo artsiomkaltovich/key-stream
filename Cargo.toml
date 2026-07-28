@@ -14,3 +14,8 @@ tokio = { version = "1", features = ["sync", "rt"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "time"] }
+criterion = { version = "0.8", features = ["async_tokio"] }
+
+[[bench]]
+name = "key_stream"
+harness = false
