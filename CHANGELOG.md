@@ -1,9 +1,32 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-c
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Changed
+
+- **Breaking:** `KeySender::send` now returns `usize` instead of
+  `Result<usize, SendError<V>>`.
+- **Breaking:** `KeyReceiver::try_recv` is now synchronous (`fn`) instead of
+  `async fn`.
+- **Breaking:** Renamed `KeyReceiver::to_async_stream` to
+  `KeyReceiver::into_stream`.
+- Documented `KeyStream::new` panic conditions in a `# Panics` section
+  (outside Tokio runtime, or `broadcast_capacity == 0`).
+- Replaced archived `actions-rs/toolchain` with
+  `dtolnay/rust-toolchain@stable` in CI and publish workflows.
+
+### Fixed
+
+- `KeySender::send` no longer reports an error when the key's receivers were all
+  dropped but the cleanup task has not removed the key yet; it now returns `0`,
+  matching the documented behavior and the missing-key case.
+- The stream returned by `KeyReceiver::into_stream` now terminates when the
+  channel is closed, instead of yielding `Err(RecvError::Closed)` forever.
 
 ## [0.10.0]
 
