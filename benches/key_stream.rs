@@ -28,16 +28,27 @@ fn bench_subscribe_new_keys(c: &mut Criterion) {
     for size in [100usize, 1_000, 10_000] {
         group.throughput(Throughput::Elements(size as u64));
         group.bench_function(BenchmarkId::new("batch", size), |b| {
-            b.to_async(&rt).iter(|| async move {
-                run_on_localset(async move {
+            b.iter_custom(|iters| {
+                rt.block_on(async move {
+                    run_on_localset(async move {
+                        let start = Instant::now();
                     let stream = KeyStream::<u64, u64>::new(16);
                     let sender = stream.sender();
-                    for key in 0..size as u64 {
-                        let receiver = sender.subscribe(key).await;
-                        std::hint::black_box(receiver);
-                    }
+                        for iter in 0..iters {
+                            let base = iter * size as u64;
+                            for key_offset in 0..size as u64 {
+                                let receiver = sender.subscribe(base + key_offset).await;
+                                std::hint::black_box(receiver);
+                            }
+                        }
+
+                        std::hint::black_box(stream);
+                        drop(sender);
+                        tokio::task::yield_now().await;
+                        start.elapsed()
+                    })
+                    .await
                 })
-                .await;
             });
         });
     }
@@ -54,29 +65,28 @@ fn bench_send_single_key(c: &mut Criterion) {
         group.throughput(Throughput::Elements(fanout as u64));
         group.bench_function(BenchmarkId::new("fanout", fanout), |b| {
             b.iter_custom(|iters| {
-                rt.block_on(async {
-                    let local = LocalSet::new();
-                    local
-                        .run_until(async move {
-                            let stream = KeyStream::<u64, u64>::new(1_024);
-                            let sender = stream.sender();
-                            let mut receivers = Vec::with_capacity(fanout);
-                            for _ in 0..fanout {
-                                receivers.push(sender.subscribe(1).await);
-                            }
+                rt.block_on(async move {
+                    run_on_localset(async move {
+                        let stream = KeyStream::<u64, u64>::new(1_024);
+                        let sender = stream.sender();
+                        let mut receivers = Vec::with_capacity(fanout);
+                        for _ in 0..fanout {
+                            receivers.push(sender.subscribe(1).await);
+                        }
 
-                            let start = Instant::now();
-                            for _ in 0..iters {
-                                let delivered = sender.send(&1, 42).await;
-                                std::hint::black_box(delivered);
-                            }
-                            let elapsed = start.elapsed();
+                        let start = Instant::now();
+                        for _ in 0..iters {
+                            let delivered = sender.send(&1, 42).await;
+                            std::hint::black_box(delivered);
+                        }
 
-                            std::hint::black_box(stream);
-                            std::hint::black_box(receivers);
-                            elapsed
-                        })
-                        .await
+                        std::hint::black_box(receivers);
+                        std::hint::black_box(stream);
+                        drop(sender);
+                        tokio::task::yield_now().await;
+                        start.elapsed()
+                    })
+                    .await
                 })
             });
         });
@@ -92,22 +102,21 @@ fn bench_send_no_receiver(c: &mut Criterion) {
     group.throughput(Throughput::Elements(1));
     group.bench_function("single", |b| {
         b.iter_custom(|iters| {
-            rt.block_on(async {
-                let local = LocalSet::new();
-                local
-                    .run_until(async move {
+            rt.block_on(async move {
+                run_on_localset(async move {
+                    let start = Instant::now();
                         let stream = KeyStream::<u64, u64>::new(1_024);
                         let sender = stream.sender();
 
-                        let start = Instant::now();
                         for _ in 0..iters {
                             let delivered = sender.send(&1, 42).await;
                             std::hint::black_box(delivered);
                         }
-                        let elapsed = start.elapsed();
 
                         std::hint::black_box(stream);
-                        elapsed
+                        drop(sender);
+                        tokio::task::yield_now().await;
+                        start.elapsed()
                     })
                     .await
             })
@@ -124,23 +133,30 @@ fn bench_subscribe_existing_key(c: &mut Criterion) {
     for size in [100usize, 1_000, 10_000] {
         group.throughput(Throughput::Elements(size as u64));
         group.bench_function(BenchmarkId::new("batch", size), |b| {
-            let (_stream, sender) = rt.block_on(async {
-                run_on_localset(async {
-                    let stream = KeyStream::<u64, u64>::new(16);
-                    let sender = stream.sender();
-                    // Prime with one subscription so subsequent subscriptions hit the existing-key path.
-                    let receiver = sender.subscribe(7).await;
-                    std::hint::black_box(receiver);
-                    (stream, sender)
-                })
-                .await
-            });
+            b.iter_custom(|iters| {
+                rt.block_on(async move {
+                    run_on_localset(async move {
+                        let start = Instant::now();
+                        let stream = KeyStream::<u64, u64>::new(16);
+                        let sender = stream.sender();
+                        // Prime with one subscription so subsequent subscriptions hit the existing-key path.
+                        let receiver = sender.subscribe(7).await;
+                        std::hint::black_box(receiver);
 
-            b.to_async(&rt).iter(|| async {
-                for _ in 0..size {
-                    let receiver = sender.subscribe(7).await;
-                    std::hint::black_box(receiver);
-                }
+                        for _ in 0..iters {
+                            for _ in 0..size {
+                                let receiver = sender.subscribe(7).await;
+                                std::hint::black_box(receiver);
+                            }
+                        }
+
+                        std::hint::black_box(stream);
+                        drop(sender);
+                        tokio::task::yield_now().await;
+                        start.elapsed()
+                    })
+                    .await
+                })
             });
         });
     }
@@ -156,23 +172,35 @@ fn bench_recv_single_key_many_messages(c: &mut Criterion) {
     for messages in [100usize, 1_000, 10_000] {
         group.throughput(Throughput::Elements(messages as u64));
         group.bench_function(BenchmarkId::new("messages", messages), |b| {
-            b.to_async(&rt).iter(|| async move {
-                run_on_localset(async move {
+            b.iter_custom(|iters| {
+                rt.block_on(async move {
+                    run_on_localset(async move {
+                        let start = Instant::now();
                     let stream = KeyStream::<u64, u64>::new(messages + 1);
                     let sender = stream.sender();
                     let mut receiver = sender.subscribe(1).await;
 
-                    for value in 0..messages as u64 {
-                        let delivered = sender.send(&1, value).await;
-                        std::hint::black_box(delivered);
-                    }
+                        for _ in 0..iters {
+                            for value in 0..messages as u64 {
+                                let delivered = sender.send(&1, value).await;
+                                std::hint::black_box(delivered);
+                            }
 
-                    for _ in 0..messages {
-                        let value = receiver.recv().await.expect("receiver closed unexpectedly");
-                        std::hint::black_box(value);
-                    }
+                            for _ in 0..messages {
+                                let value =
+                                    receiver.recv().await.expect("receiver closed unexpectedly");
+                                std::hint::black_box(value);
+                            }
+                        }
+
+                        std::hint::black_box(stream);
+                        drop(sender);
+                        drop(receiver);
+                        tokio::task::yield_now().await;
+                        start.elapsed()
+                    })
+                    .await
                 })
-                .await;
             });
         });
     }
@@ -190,45 +218,61 @@ fn bench_recv_many_keys_many_messages(c: &mut Criterion) {
         let total_messages = (keys * messages_per_key) as u64;
         group.throughput(Throughput::Elements(total_messages));
         group.bench_function(BenchmarkId::new("keys", keys), |b| {
-            b.to_async(&rt).iter(|| async move {
-                run_on_localset(async move {
-                    let stream = KeyStream::<u64, u64>::new(messages_per_key + 1);
-                    let sender = stream.sender();
-                    let mut receivers = Vec::with_capacity(keys);
+            b.iter_custom(|iters| {
+                rt.block_on(async move {
+                    run_on_localset(async move {
+                        let mut total = Duration::ZERO;
+                        for _ in 0..iters {
+                            let start = Instant::now();
+                            let stream = KeyStream::<u64, u64>::new(messages_per_key + 1);
+                            let sender = stream.sender();
+                            let mut receivers = Vec::with_capacity(keys);
 
-                    for key in 0..keys as u64 {
-                        receivers.push(sender.subscribe(key).await);
-                    }
+                            for key in 0..keys as u64 {
+                                receivers.push(sender.subscribe(key).await);
+                            }
 
-                    for message in 0..messages_per_key as u64 {
-                        let mut send_set = JoinSet::new();
-                        for key in 0..keys as u64 {
-                            let sender = sender.clone();
-                            send_set.spawn_local(async move { sender.send(&key, message).await });
-                        }
-                        while let Some(result) = send_set.join_next().await {
-                            std::hint::black_box(result.expect("send task panicked"));
-                        }
-                    }
+                            for message in 0..messages_per_key as u64 {
+                                let mut send_set = JoinSet::new();
+                                for key in 0..keys as u64 {
+                                    let sender = sender.clone();
+                                    send_set
+                                        .spawn_local(async move { sender.send(&key, message).await });
+                                }
+                                while let Some(result) = send_set.join_next().await {
+                                    std::hint::black_box(result.expect("send task panicked"));
+                                }
+                            }
 
-                    for _ in 0..messages_per_key {
-                        let mut recv_set = JoinSet::new();
-                        for receiver in receivers.drain(..) {
-                            recv_set.spawn_local(async move {
-                                let mut receiver = receiver;
-                                let value =
-                                    receiver.recv().await.expect("receiver closed unexpectedly");
-                                (receiver, value)
-                            });
+                            for _ in 0..messages_per_key {
+                                let mut recv_set = JoinSet::new();
+                                for receiver in receivers.drain(..) {
+                                    recv_set.spawn_local(async move {
+                                        let mut receiver = receiver;
+                                        let value = receiver
+                                            .recv()
+                                            .await
+                                            .expect("receiver closed unexpectedly");
+                                        (receiver, value)
+                                    });
+                                }
+                                while let Some(result) = recv_set.join_next().await {
+                                    let (receiver, value) = result.expect("recv task panicked");
+                                    std::hint::black_box(value);
+                                    receivers.push(receiver);
+                                }
+                            }
+
+                            std::hint::black_box(stream);
+                            drop(sender);
+                            drop(receivers);
+                            tokio::task::yield_now().await;
+                            total += start.elapsed();
                         }
-                        while let Some(result) = recv_set.join_next().await {
-                            let (receiver, value) = result.expect("recv task panicked");
-                            std::hint::black_box(value);
-                            receivers.push(receiver);
-                        }
-                    }
+                        total
+                    })
+                    .await
                 })
-                .await;
             });
         });
     }
