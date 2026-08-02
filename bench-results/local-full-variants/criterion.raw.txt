@@ -1,0 +1,1283 @@
+    Finished `bench` profile [optimized] target(s) in 0.86s
+     Running benches/key_stream.rs (target/release/deps/key_stream-f8fbfd8e589764fa)
+Gnuplot not found, using plotters backend
+Benchmarking full_cycle/1x1/1key_10000msg/u64
+Benchmarking full_cycle/1x1/1key_10000msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/1key_10000msg/u64: Collecting 20 samples in estimated 3.0330 s (1060 iterations)
+Benchmarking full_cycle/1x1/1key_10000msg/u64: Analyzing
+full_cycle/1x1/1key_10000msg/u64
+                        time:   [2.8660 ms 2.8778 ms 2.8913 ms]
+                        thrpt:  [31.128 Melem/s 31.275 Melem/s 31.404 Melem/s]
+                 change:
+                        time:   [+60.994% +61.997% +62.948%] (p = 0.00 < 0.05)
+                        thrpt:  [−38.631% −38.270% −37.886%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+Benchmarking full_cycle/1x1/1key_10000msg/String
+Benchmarking full_cycle/1x1/1key_10000msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/1key_10000msg/String: Collecting 20 samples in estimated 3.0103 s (400 iterations)
+Benchmarking full_cycle/1x1/1key_10000msg/String: Analyzing
+full_cycle/1x1/1key_10000msg/String
+                        time:   [7.4586 ms 7.4946 ms 7.5385 ms]
+                        thrpt:  [11.939 Melem/s 12.009 Melem/s 12.067 Melem/s]
+                 change:
+                        time:   [+59.583% +64.709% +68.283%] (p = 0.00 < 0.05)
+                        thrpt:  [−40.576% −39.287% −37.337%]
+                        Performance has regressed.
+Found 2 outliers among 20 measurements (10.00%)
+  1 (5.00%) high mild
+  1 (5.00%) high severe
+Benchmarking full_cycle/1x1/1key_10000msg/DropValue
+Benchmarking full_cycle/1x1/1key_10000msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/1key_10000msg/DropValue: Collecting 20 samples in estimated 3.0331 s (1000 iterations)
+Benchmarking full_cycle/1x1/1key_10000msg/DropValue: Analyzing
+full_cycle/1x1/1key_10000msg/DropValue
+                        time:   [3.0603 ms 3.1617 ms 3.3272 ms]
+                        thrpt:  [27.050 Melem/s 28.467 Melem/s 29.410 Melem/s]
+                 change:
+                        time:   [+68.333% +73.757% +84.578%] (p = 0.00 < 0.05)
+                        thrpt:  [−45.822% −42.448% −40.594%]
+                        Performance has regressed.
+Found 4 outliers among 20 measurements (20.00%)
+  2 (10.00%) high mild
+  2 (10.00%) high severe
+Benchmarking full_cycle/1x1/10key_1000msg/u64
+Benchmarking full_cycle/1x1/10key_1000msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/10key_1000msg/u64: Collecting 20 samples in estimated 3.0175 s (1060 iterations)
+Benchmarking full_cycle/1x1/10key_1000msg/u64: Analyzing
+full_cycle/1x1/10key_1000msg/u64
+                        time:   [2.8006 ms 2.8262 ms 2.8536 ms]
+                        thrpt:  [31.547 Melem/s 31.852 Melem/s 32.143 Melem/s]
+                 change:
+                        time:   [+70.661% +73.033% +75.300%] (p = 0.00 < 0.05)
+                        thrpt:  [−42.955% −42.208% −41.404%]
+                        Performance has regressed.
+Benchmarking full_cycle/1x1/10key_1000msg/String
+Benchmarking full_cycle/1x1/10key_1000msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/10key_1000msg/String: Collecting 20 samples in estimated 3.1221 s (440 iterations)
+Benchmarking full_cycle/1x1/10key_1000msg/String: Analyzing
+full_cycle/1x1/10key_1000msg/String
+                        time:   [7.1073 ms 7.1719 ms 7.2412 ms]
+                        thrpt:  [12.432 Melem/s 12.552 Melem/s 12.666 Melem/s]
+                 change:
+                        time:   [+72.992% +75.670% +78.233%] (p = 0.00 < 0.05)
+                        thrpt:  [−43.894% −43.075% −42.194%]
+                        Performance has regressed.
+Benchmarking full_cycle/1x1/10key_1000msg/DropValue
+Benchmarking full_cycle/1x1/10key_1000msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/10key_1000msg/DropValue: Collecting 20 samples in estimated 3.0220 s (1040 iterations)
+Benchmarking full_cycle/1x1/10key_1000msg/DropValue: Analyzing
+full_cycle/1x1/10key_1000msg/DropValue
+                        time:   [2.8893 ms 2.9458 ms 3.0264 ms]
+                        thrpt:  [29.745 Melem/s 30.559 Melem/s 31.157 Melem/s]
+                 change:
+                        time:   [+70.958% +75.026% +80.430%] (p = 0.00 < 0.05)
+                        thrpt:  [−44.577% −42.865% −41.506%]
+                        Performance has regressed.
+Found 3 outliers among 20 measurements (15.00%)
+  3 (15.00%) high severe
+Benchmarking full_cycle/1x1/100key_100msg/u64
+Benchmarking full_cycle/1x1/100key_100msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/100key_100msg/u64: Collecting 20 samples in estimated 3.0306 s (1020 iterations)
+Benchmarking full_cycle/1x1/100key_100msg/u64: Analyzing
+full_cycle/1x1/100key_100msg/u64
+                        time:   [2.9569 ms 2.9669 ms 2.9790 ms]
+                        thrpt:  [30.278 Melem/s 30.402 Melem/s 30.505 Melem/s]
+                 change:
+                        time:   [+67.792% +68.425% +69.182%] (p = 0.00 < 0.05)
+                        thrpt:  [−40.892% −40.626% −40.402%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+Benchmarking full_cycle/1x1/100key_100msg/String
+Benchmarking full_cycle/1x1/100key_100msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/100key_100msg/String: Collecting 20 samples in estimated 3.0738 s (420 iterations)
+Benchmarking full_cycle/1x1/100key_100msg/String: Analyzing
+full_cycle/1x1/100key_100msg/String
+                        time:   [7.2600 ms 7.3094 ms 7.3729 ms]
+                        thrpt:  [12.234 Melem/s 12.340 Melem/s 12.424 Melem/s]
+                 change:
+                        time:   [+70.221% +71.546% +73.083%] (p = 0.00 < 0.05)
+                        thrpt:  [−42.224% −41.707% −41.253%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking full_cycle/1x1/100key_100msg/DropValue
+Benchmarking full_cycle/1x1/100key_100msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/100key_100msg/DropValue: Collecting 20 samples in estimated 3.0312 s (920 iterations)
+Benchmarking full_cycle/1x1/100key_100msg/DropValue: Analyzing
+full_cycle/1x1/100key_100msg/DropValue
+                        time:   [3.0929 ms 3.1002 ms 3.1086 ms]
+                        thrpt:  [29.016 Melem/s 29.095 Melem/s 29.164 Melem/s]
+                 change:
+                        time:   [+62.063% +63.333% +64.550%] (p = 0.00 < 0.05)
+                        thrpt:  [−39.228% −38.775% −38.296%]
+                        Performance has regressed.
+Found 3 outliers among 20 measurements (15.00%)
+  3 (15.00%) high mild
+Benchmarking full_cycle/1x1/1000key_10msg/u64
+Benchmarking full_cycle/1x1/1000key_10msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/1000key_10msg/u64: Collecting 20 samples in estimated 3.0352 s (840 iterations)
+Benchmarking full_cycle/1x1/1000key_10msg/u64: Analyzing
+full_cycle/1x1/1000key_10msg/u64
+                        time:   [3.5652 ms 3.5797 ms 3.5968 ms]
+                        thrpt:  [25.578 Melem/s 25.701 Melem/s 25.805 Melem/s]
+                 change:
+                        time:   [+56.978% +58.598% +60.111%] (p = 0.00 < 0.05)
+                        thrpt:  [−37.543% −36.948% −36.297%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+Benchmarking full_cycle/1x1/1000key_10msg/String
+Benchmarking full_cycle/1x1/1000key_10msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/1000key_10msg/String: Collecting 20 samples in estimated 3.1228 s (400 iterations)
+Benchmarking full_cycle/1x1/1000key_10msg/String: Analyzing
+full_cycle/1x1/1000key_10msg/String
+                        time:   [7.7437 ms 7.7776 ms 7.8165 ms]
+                        thrpt:  [11.770 Melem/s 11.829 Melem/s 11.881 Melem/s]
+                 change:
+                        time:   [+65.245% +66.860% +68.380%] (p = 0.00 < 0.05)
+                        thrpt:  [−40.611% −40.070% −39.484%]
+                        Performance has regressed.
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high mild
+Benchmarking full_cycle/1x1/1000key_10msg/DropValue
+Benchmarking full_cycle/1x1/1000key_10msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/1000key_10msg/DropValue: Collecting 20 samples in estimated 3.0445 s (820 iterations)
+Benchmarking full_cycle/1x1/1000key_10msg/DropValue: Analyzing
+full_cycle/1x1/1000key_10msg/DropValue
+                        time:   [3.7089 ms 3.7267 ms 3.7472 ms]
+                        thrpt:  [24.551 Melem/s 24.686 Melem/s 24.805 Melem/s]
+                 change:
+                        time:   [+56.904% +60.151% +62.471%] (p = 0.00 < 0.05)
+                        thrpt:  [−38.451% −37.559% −36.267%]
+                        Performance has regressed.
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high mild
+Benchmarking full_cycle/1x1/10000key_1msg/u64
+Benchmarking full_cycle/1x1/10000key_1msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/10000key_1msg/u64: Collecting 20 samples in estimated 3.0856 s (400 iterations)
+Benchmarking full_cycle/1x1/10000key_1msg/u64: Analyzing
+full_cycle/1x1/10000key_1msg/u64
+                        time:   [7.4751 ms 7.5030 ms 7.5332 ms]
+                        thrpt:  [14.602 Melem/s 14.661 Melem/s 14.716 Melem/s]
+                 change:
+                        time:   [+35.186% +37.468% +39.139%] (p = 0.00 < 0.05)
+                        thrpt:  [−28.130% −27.256% −26.028%]
+                        Performance has regressed.
+Benchmarking full_cycle/1x1/10000key_1msg/String
+Benchmarking full_cycle/1x1/10000key_1msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/10000key_1msg/String: Collecting 20 samples in estimated 3.1777 s (260 iterations)
+Benchmarking full_cycle/1x1/10000key_1msg/String: Analyzing
+full_cycle/1x1/10000key_1msg/String
+                        time:   [11.544 ms 11.590 ms 11.640 ms]
+                        thrpt:  [9.4506 Melem/s 9.4909 Melem/s 9.5287 Melem/s]
+                 change:
+                        time:   [+47.070% +48.490% +49.716%] (p = 0.00 < 0.05)
+                        thrpt:  [−33.207% −32.655% −32.005%]
+                        Performance has regressed.
+Benchmarking full_cycle/1x1/10000key_1msg/DropValue
+Benchmarking full_cycle/1x1/10000key_1msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/1x1/10000key_1msg/DropValue: Collecting 20 samples in estimated 3.0805 s (400 iterations)
+Benchmarking full_cycle/1x1/10000key_1msg/DropValue: Analyzing
+full_cycle/1x1/10000key_1msg/DropValue
+                        time:   [7.8025 ms 7.8870 ms 7.9642 ms]
+                        thrpt:  [13.812 Melem/s 13.947 Melem/s 14.098 Melem/s]
+                 change:
+                        time:   [+37.890% +40.996% +43.410%] (p = 0.00 < 0.05)
+                        thrpt:  [−30.270% −29.076% −27.478%]
+                        Performance has regressed.
+Benchmarking full_cycle/16x1/1key_10000msg/u64
+Benchmarking full_cycle/16x1/1key_10000msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/1key_10000msg/u64: Collecting 20 samples in estimated 3.0359 s (1000 iterations)
+Benchmarking full_cycle/16x1/1key_10000msg/u64: Analyzing
+full_cycle/16x1/1key_10000msg/u64
+                        time:   [2.8671 ms 2.8804 ms 2.8962 ms]
+                        thrpt:  [31.076 Melem/s 31.246 Melem/s 31.392 Melem/s]
+                 change:
+                        time:   [+64.319% +65.533% +66.718%] (p = 0.00 < 0.05)
+                        thrpt:  [−40.018% −39.589% −39.143%]
+                        Performance has regressed.
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high mild
+Benchmarking full_cycle/16x1/1key_10000msg/String
+Benchmarking full_cycle/16x1/1key_10000msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/1key_10000msg/String: Collecting 20 samples in estimated 3.0644 s (420 iterations)
+Benchmarking full_cycle/16x1/1key_10000msg/String: Analyzing
+full_cycle/16x1/1key_10000msg/String
+                        time:   [7.4211 ms 7.5503 ms 7.7196 ms]
+                        thrpt:  [11.659 Melem/s 11.920 Melem/s 12.128 Melem/s]
+                 change:
+                        time:   [+75.085% +79.650% +83.867%] (p = 0.00 < 0.05)
+                        thrpt:  [−45.613% −44.336% −42.885%]
+                        Performance has regressed.
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high severe
+Benchmarking full_cycle/16x1/1key_10000msg/DropValue
+Benchmarking full_cycle/16x1/1key_10000msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/1key_10000msg/DropValue: Collecting 20 samples in estimated 3.0392 s (1000 iterations)
+Benchmarking full_cycle/16x1/1key_10000msg/DropValue: Analyzing
+full_cycle/16x1/1key_10000msg/DropValue
+                        time:   [3.0253 ms 3.0372 ms 3.0488 ms]
+                        thrpt:  [29.521 Melem/s 29.634 Melem/s 29.750 Melem/s]
+                 change:
+                        time:   [+64.131% +65.623% +66.907%] (p = 0.00 < 0.05)
+                        thrpt:  [−40.086% −39.622% −39.073%]
+                        Performance has regressed.
+Benchmarking full_cycle/16x1/10key_1000msg/u64
+Benchmarking full_cycle/16x1/10key_1000msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/10key_1000msg/u64: Collecting 20 samples in estimated 3.0220 s (1020 iterations)
+Benchmarking full_cycle/16x1/10key_1000msg/u64: Analyzing
+full_cycle/16x1/10key_1000msg/u64
+                        time:   [2.7698 ms 2.7905 ms 2.8131 ms]
+                        thrpt:  [32.000 Melem/s 32.259 Melem/s 32.500 Melem/s]
+                 change:
+                        time:   [+68.124% +71.247% +73.714%] (p = 0.00 < 0.05)
+                        thrpt:  [−42.434% −41.605% −40.520%]
+                        Performance has regressed.
+Benchmarking full_cycle/16x1/10key_1000msg/String
+Benchmarking full_cycle/16x1/10key_1000msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/10key_1000msg/String: Collecting 20 samples in estimated 3.1105 s (440 iterations)
+Benchmarking full_cycle/16x1/10key_1000msg/String: Analyzing
+full_cycle/16x1/10key_1000msg/String
+                        time:   [6.9656 ms 7.0172 ms 7.0788 ms]
+                        thrpt:  [12.717 Melem/s 12.829 Melem/s 12.924 Melem/s]
+                 change:
+                        time:   [+72.161% +74.428% +76.519%] (p = 0.00 < 0.05)
+                        thrpt:  [−43.349% −42.670% −41.915%]
+                        Performance has regressed.
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high mild
+Benchmarking full_cycle/16x1/10key_1000msg/DropValue
+Benchmarking full_cycle/16x1/10key_1000msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/10key_1000msg/DropValue: Collecting 20 samples in estimated 3.0547 s (1020 iterations)
+Benchmarking full_cycle/16x1/10key_1000msg/DropValue: Analyzing
+full_cycle/16x1/10key_1000msg/DropValue
+                        time:   [2.9290 ms 2.9557 ms 2.9825 ms]
+                        thrpt:  [30.183 Melem/s 30.456 Melem/s 30.734 Melem/s]
+                 change:
+                        time:   [+60.033% +68.194% +74.421%] (p = 0.00 < 0.05)
+                        thrpt:  [−42.668% −40.545% −37.513%]
+                        Performance has regressed.
+Benchmarking full_cycle/16x1/100key_100msg/u64
+Benchmarking full_cycle/16x1/100key_100msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/100key_100msg/u64: Collecting 20 samples in estimated 3.0129 s (980 iterations)
+Benchmarking full_cycle/16x1/100key_100msg/u64: Analyzing
+full_cycle/16x1/100key_100msg/u64
+                        time:   [2.9585 ms 2.9705 ms 2.9853 ms]
+                        thrpt:  [30.215 Melem/s 30.365 Melem/s 30.489 Melem/s]
+                 change:
+                        time:   [+63.894% +65.293% +66.709%] (p = 0.00 < 0.05)
+                        thrpt:  [−40.015% −39.501% −38.985%]
+                        Performance has regressed.
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high mild
+Benchmarking full_cycle/16x1/100key_100msg/String
+Benchmarking full_cycle/16x1/100key_100msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/100key_100msg/String: Collecting 20 samples in estimated 3.1018 s (380 iterations)
+Benchmarking full_cycle/16x1/100key_100msg/String: Analyzing
+full_cycle/16x1/100key_100msg/String
+                        time:   [7.3387 ms 7.4044 ms 7.4735 ms]
+                        thrpt:  [12.069 Melem/s 12.182 Melem/s 12.291 Melem/s]
+                 change:
+                        time:   [+66.935% +68.792% +70.623%] (p = 0.00 < 0.05)
+                        thrpt:  [−41.391% −40.756% −40.097%]
+                        Performance has regressed.
+Benchmarking full_cycle/16x1/100key_100msg/DropValue
+Benchmarking full_cycle/16x1/100key_100msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/100key_100msg/DropValue: Collecting 20 samples in estimated 3.0398 s (960 iterations)
+Benchmarking full_cycle/16x1/100key_100msg/DropValue: Analyzing
+full_cycle/16x1/100key_100msg/DropValue
+                        time:   [3.1056 ms 3.1203 ms 3.1375 ms]
+                        thrpt:  [28.749 Melem/s 28.908 Melem/s 29.045 Melem/s]
+                 change:
+                        time:   [+62.507% +64.637% +66.697%] (p = 0.00 < 0.05)
+                        thrpt:  [−40.011% −39.260% −38.464%]
+                        Performance has regressed.
+Found 3 outliers among 20 measurements (15.00%)
+  1 (5.00%) high mild
+  2 (10.00%) high severe
+Benchmarking full_cycle/16x1/1000key_10msg/u64
+Benchmarking full_cycle/16x1/1000key_10msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/1000key_10msg/u64: Collecting 20 samples in estimated 3.0657 s (840 iterations)
+Benchmarking full_cycle/16x1/1000key_10msg/u64: Analyzing
+full_cycle/16x1/1000key_10msg/u64
+                        time:   [3.6309 ms 3.6886 ms 3.7760 ms]
+                        thrpt:  [24.365 Melem/s 24.941 Melem/s 25.338 Melem/s]
+                 change:
+                        time:   [+57.197% +62.102% +66.726%] (p = 0.00 < 0.05)
+                        thrpt:  [−40.021% −38.310% −36.386%]
+                        Performance has regressed.
+Found 2 outliers among 20 measurements (10.00%)
+  1 (5.00%) high mild
+  1 (5.00%) high severe
+Benchmarking full_cycle/16x1/1000key_10msg/String
+Benchmarking full_cycle/16x1/1000key_10msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/1000key_10msg/String: Collecting 20 samples in estimated 3.1278 s (400 iterations)
+Benchmarking full_cycle/16x1/1000key_10msg/String: Analyzing
+full_cycle/16x1/1000key_10msg/String
+                        time:   [7.8770 ms 8.0034 ms 8.1980 ms]
+                        thrpt:  [11.222 Melem/s 11.495 Melem/s 11.680 Melem/s]
+                 change:
+                        time:   [+66.738% +69.898% +74.198%] (p = 0.00 < 0.05)
+                        thrpt:  [−42.594% −41.141% −40.026%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking full_cycle/16x1/1000key_10msg/DropValue
+Benchmarking full_cycle/16x1/1000key_10msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/1000key_10msg/DropValue: Collecting 20 samples in estimated 3.0332 s (800 iterations)
+Benchmarking full_cycle/16x1/1000key_10msg/DropValue: Analyzing
+full_cycle/16x1/1000key_10msg/DropValue
+                        time:   [3.7079 ms 3.7192 ms 3.7316 ms]
+                        thrpt:  [24.654 Melem/s 24.736 Melem/s 24.812 Melem/s]
+                 change:
+                        time:   [+59.811% +60.952% +61.906%] (p = 0.00 < 0.05)
+                        thrpt:  [−38.236% −37.870% −37.426%]
+                        Performance has regressed.
+Benchmarking full_cycle/16x1/10000key_1msg/u64
+Benchmarking full_cycle/16x1/10000key_1msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/10000key_1msg/u64: Collecting 20 samples in estimated 3.0687 s (400 iterations)
+Benchmarking full_cycle/16x1/10000key_1msg/u64: Analyzing
+full_cycle/16x1/10000key_1msg/u64
+                        time:   [7.4976 ms 7.5961 ms 7.7583 ms]
+                        thrpt:  [14.178 Melem/s 14.481 Melem/s 14.671 Melem/s]
+                 change:
+                        time:   [+36.005% +38.136% +41.371%] (p = 0.00 < 0.05)
+                        thrpt:  [−29.264% −27.608% −26.473%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking full_cycle/16x1/10000key_1msg/String
+Benchmarking full_cycle/16x1/10000key_1msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/10000key_1msg/String: Collecting 20 samples in estimated 3.0502 s (260 iterations)
+Benchmarking full_cycle/16x1/10000key_1msg/String: Analyzing
+full_cycle/16x1/10000key_1msg/String
+                        time:   [11.881 ms 12.000 ms 12.123 ms]
+                        thrpt:  [9.0733 Melem/s 9.1664 Melem/s 9.2584 Melem/s]
+                 change:
+                        time:   [+50.771% +52.523% +54.326%] (p = 0.00 < 0.05)
+                        thrpt:  [−35.202% −34.436% −33.674%]
+                        Performance has regressed.
+Benchmarking full_cycle/16x1/10000key_1msg/DropValue
+Benchmarking full_cycle/16x1/10000key_1msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/16x1/10000key_1msg/DropValue: Collecting 20 samples in estimated 3.0931 s (400 iterations)
+Benchmarking full_cycle/16x1/10000key_1msg/DropValue: Analyzing
+full_cycle/16x1/10000key_1msg/DropValue
+                        time:   [7.6510 ms 7.7035 ms 7.7660 ms]
+                        thrpt:  [14.164 Melem/s 14.279 Melem/s 14.377 Melem/s]
+                 change:
+                        time:   [+32.070% +35.315% +37.642%] (p = 0.00 < 0.05)
+                        thrpt:  [−27.348% −26.098% −24.282%]
+                        Performance has regressed.
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high mild
+Benchmarking full_cycle/1x16/1key_10000msg/u64
+Benchmarking full_cycle/1x16/1key_10000msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/1key_10000msg/u64: Collecting 20 samples in estimated 3.0881 s (260 iterations)
+Benchmarking full_cycle/1x16/1key_10000msg/u64: Analyzing
+full_cycle/1x16/1key_10000msg/u64
+                        time:   [11.876 ms 12.057 ms 12.375 ms]
+                        thrpt:  [55.761 Melem/s 57.230 Melem/s 58.104 Melem/s]
+                 change:
+                        time:   [+85.826% +88.673% +93.628%] (p = 0.00 < 0.05)
+                        thrpt:  [−48.354% −46.998% −46.186%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking full_cycle/1x16/1key_10000msg/String
+Benchmarking full_cycle/1x16/1key_10000msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/1key_10000msg/String: Collecting 20 samples in estimated 3.4605 s (100 iterations)
+Benchmarking full_cycle/1x16/1key_10000msg/String: Analyzing
+full_cycle/1x16/1key_10000msg/String
+                        time:   [34.255 ms 34.455 ms 34.728 ms]
+                        thrpt:  [19.869 Melem/s 20.027 Melem/s 20.144 Melem/s]
+                 change:
+                        time:   [+89.562% +93.487% +96.418%] (p = 0.00 < 0.05)
+                        thrpt:  [−49.088% −48.317% −47.247%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking full_cycle/1x16/1key_10000msg/DropValue
+Benchmarking full_cycle/1x16/1key_10000msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/1key_10000msg/DropValue: Collecting 20 samples in estimated 3.0785 s (240 iterations)
+Benchmarking full_cycle/1x16/1key_10000msg/DropValue: Analyzing
+full_cycle/1x16/1key_10000msg/DropValue
+                        time:   [12.867 ms 12.931 ms 12.994 ms]
+                        thrpt:  [53.102 Melem/s 53.363 Melem/s 53.629 Melem/s]
+                 change:
+                        time:   [+81.645% +85.357% +87.842%] (p = 0.00 < 0.05)
+                        thrpt:  [−46.764% −46.050% −44.948%]
+                        Performance has regressed.
+Benchmarking full_cycle/1x16/10key_1000msg/u64
+Benchmarking full_cycle/1x16/10key_1000msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/10key_1000msg/u64: Collecting 20 samples in estimated 3.0670 s (260 iterations)
+Benchmarking full_cycle/1x16/10key_1000msg/u64: Analyzing
+full_cycle/1x16/10key_1000msg/u64
+                        time:   [11.777 ms 11.817 ms 11.860 ms]
+                        thrpt:  [58.204 Melem/s 58.420 Melem/s 58.616 Melem/s]
+                 change:
+                        time:   [+73.755% +79.478% +83.427%] (p = 0.00 < 0.05)
+                        thrpt:  [−45.482% −44.283% −42.448%]
+                        Performance has regressed.
+Found 2 outliers among 20 measurements (10.00%)
+  1 (5.00%) low mild
+  1 (5.00%) high mild
+Benchmarking full_cycle/1x16/10key_1000msg/String
+Benchmarking full_cycle/1x16/10key_1000msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/10key_1000msg/String: Collecting 20 samples in estimated 3.5486 s (100 iterations)
+Benchmarking full_cycle/1x16/10key_1000msg/String: Analyzing
+full_cycle/1x16/10key_1000msg/String
+                        time:   [33.751 ms 33.985 ms 34.266 ms]
+                        thrpt:  [20.146 Melem/s 20.312 Melem/s 20.453 Melem/s]
+                 change:
+                        time:   [+73.917% +80.421% +84.846%] (p = 0.00 < 0.05)
+                        thrpt:  [−45.901% −44.574% −42.501%]
+                        Performance has regressed.
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high mild
+Benchmarking full_cycle/1x16/10key_1000msg/DropValue
+Benchmarking full_cycle/1x16/10key_1000msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/10key_1000msg/DropValue: Collecting 20 samples in estimated 3.0700 s (240 iterations)
+Benchmarking full_cycle/1x16/10key_1000msg/DropValue: Analyzing
+full_cycle/1x16/10key_1000msg/DropValue
+                        time:   [13.097 ms 13.219 ms 13.336 ms]
+                        thrpt:  [51.764 Melem/s 52.222 Melem/s 52.707 Melem/s]
+                 change:
+                        time:   [+87.414% +89.830% +92.142%] (p = 0.00 < 0.05)
+                        thrpt:  [−47.955% −47.321% −46.642%]
+                        Performance has regressed.
+Benchmarking full_cycle/1x16/100key_100msg/u64
+Benchmarking full_cycle/1x16/100key_100msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/100key_100msg/u64: Collecting 20 samples in estimated 3.1851 s (240 iterations)
+Benchmarking full_cycle/1x16/100key_100msg/u64: Analyzing
+full_cycle/1x16/100key_100msg/u64
+                        time:   [12.136 ms 12.269 ms 12.403 ms]
+                        thrpt:  [55.889 Melem/s 56.498 Melem/s 57.118 Melem/s]
+                 change:
+                        time:   [+81.610% +83.999% +86.415%] (p = 0.00 < 0.05)
+                        thrpt:  [−46.356% −45.652% −44.937%]
+                        Performance has regressed.
+Benchmarking full_cycle/1x16/100key_100msg/String
+Benchmarking full_cycle/1x16/100key_100msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/100key_100msg/String: Collecting 20 samples in estimated 3.5623 s (100 iterations)
+Benchmarking full_cycle/1x16/100key_100msg/String: Analyzing
+full_cycle/1x16/100key_100msg/String
+                        time:   [34.831 ms 35.111 ms 35.417 ms]
+                        thrpt:  [19.573 Melem/s 19.743 Melem/s 19.902 Melem/s]
+                 change:
+                        time:   [+86.910% +90.904% +93.817%] (p = 0.00 < 0.05)
+                        thrpt:  [−48.405% −47.618% −46.498%]
+                        Performance has regressed.
+Benchmarking full_cycle/1x16/100key_100msg/DropValue
+Benchmarking full_cycle/1x16/100key_100msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/100key_100msg/DropValue: Collecting 20 samples in estimated 3.1403 s (240 iterations)
+Benchmarking full_cycle/1x16/100key_100msg/DropValue: Analyzing
+full_cycle/1x16/100key_100msg/DropValue
+                        time:   [13.015 ms 13.082 ms 13.174 ms]
+                        thrpt:  [52.619 Melem/s 52.989 Melem/s 53.260 Melem/s]
+                 change:
+                        time:   [+75.325% +79.483% +82.473%] (p = 0.00 < 0.05)
+                        thrpt:  [−45.197% −44.284% −42.963%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking full_cycle/1x16/1000key_10msg/u64
+Benchmarking full_cycle/1x16/1000key_10msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/1000key_10msg/u64: Collecting 20 samples in estimated 3.0199 s (220 iterations)
+Benchmarking full_cycle/1x16/1000key_10msg/u64: Analyzing
+full_cycle/1x16/1000key_10msg/u64
+                        time:   [13.739 ms 13.841 ms 13.971 ms]
+                        thrpt:  [51.678 Melem/s 52.163 Melem/s 52.551 Melem/s]
+                 change:
+                        time:   [+72.395% +73.864% +75.704%] (p = 0.00 < 0.05)
+                        thrpt:  [−43.086% −42.484% −41.994%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking full_cycle/1x16/1000key_10msg/String
+Benchmarking full_cycle/1x16/1000key_10msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/1000key_10msg/String: Collecting 20 samples in estimated 3.6568 s (100 iterations)
+Benchmarking full_cycle/1x16/1000key_10msg/String: Analyzing
+full_cycle/1x16/1000key_10msg/String
+                        time:   [36.375 ms 36.551 ms 36.740 ms]
+                        thrpt:  [19.652 Melem/s 19.753 Melem/s 19.849 Melem/s]
+                 change:
+                        time:   [+80.376% +85.021% +88.071%] (p = 0.00 < 0.05)
+                        thrpt:  [−46.829% −45.952% −44.560%]
+                        Performance has regressed.
+Benchmarking full_cycle/1x16/1000key_10msg/DropValue
+Benchmarking full_cycle/1x16/1000key_10msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/1000key_10msg/DropValue: Collecting 20 samples in estimated 3.0091 s (200 iterations)
+Benchmarking full_cycle/1x16/1000key_10msg/DropValue: Analyzing
+full_cycle/1x16/1000key_10msg/DropValue
+                        time:   [14.733 ms 14.793 ms 14.865 ms]
+                        thrpt:  [48.571 Melem/s 48.805 Melem/s 49.006 Melem/s]
+                 change:
+                        time:   [+69.813% +72.894% +75.076%] (p = 0.00 < 0.05)
+                        thrpt:  [−42.882% −42.161% −41.112%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+Benchmarking full_cycle/1x16/10000key_1msg/u64
+Benchmarking full_cycle/1x16/10000key_1msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/10000key_1msg/u64: Collecting 20 samples in estimated 3.1853 s (120 iterations)
+Benchmarking full_cycle/1x16/10000key_1msg/u64: Analyzing
+full_cycle/1x16/10000key_1msg/u64
+                        time:   [26.361 ms 26.543 ms 26.744 ms]
+                        thrpt:  [37.765 Melem/s 38.052 Melem/s 38.314 Melem/s]
+                 change:
+                        time:   [+33.597% +34.621% +35.725%] (p = 0.00 < 0.05)
+                        thrpt:  [−26.322% −25.717% −25.148%]
+                        Performance has regressed.
+Benchmarking full_cycle/1x16/10000key_1msg/String
+Benchmarking full_cycle/1x16/10000key_1msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/10000key_1msg/String: Collecting 20 samples in estimated 3.0047 s (60 iterations)
+Benchmarking full_cycle/1x16/10000key_1msg/String: Analyzing
+full_cycle/1x16/10000key_1msg/String
+                        time:   [49.672 ms 50.262 ms 51.187 ms]
+                        thrpt:  [19.732 Melem/s 20.095 Melem/s 20.333 Melem/s]
+                 change:
+                        time:   [+54.230% +58.057% +61.754%] (p = 0.00 < 0.05)
+                        thrpt:  [−38.178% −36.732% −35.162%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking full_cycle/1x16/10000key_1msg/DropValue
+Benchmarking full_cycle/1x16/10000key_1msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/1x16/10000key_1msg/DropValue: Collecting 20 samples in estimated 3.3509 s (120 iterations)
+Benchmarking full_cycle/1x16/10000key_1msg/DropValue: Analyzing
+full_cycle/1x16/10000key_1msg/DropValue
+                        time:   [27.838 ms 27.967 ms 28.097 ms]
+                        thrpt:  [35.946 Melem/s 36.114 Melem/s 36.281 Melem/s]
+                 change:
+                        time:   [+33.429% +36.582% +38.664%] (p = 0.00 < 0.05)
+                        thrpt:  [−27.883% −26.784% −25.054%]
+                        Performance has regressed.
+Benchmarking full_cycle/4x4/1key_10000msg/u64
+Benchmarking full_cycle/4x4/1key_10000msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/1key_10000msg/u64: Collecting 20 samples in estimated 3.0056 s (620 iterations)
+Benchmarking full_cycle/4x4/1key_10000msg/u64: Analyzing
+full_cycle/4x4/1key_10000msg/u64
+                        time:   [4.7675 ms 4.8208 ms 4.9080 ms]
+                        thrpt:  [42.789 Melem/s 43.563 Melem/s 44.050 Melem/s]
+                 change:
+                        time:   [+76.203% +78.355% +82.111%] (p = 0.00 < 0.05)
+                        thrpt:  [−45.089% −43.932% −43.247%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking full_cycle/4x4/1key_10000msg/String
+Benchmarking full_cycle/4x4/1key_10000msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/1key_10000msg/String: Collecting 20 samples in estimated 3.0418 s (220 iterations)
+Benchmarking full_cycle/4x4/1key_10000msg/String: Analyzing
+full_cycle/4x4/1key_10000msg/String
+                        time:   [13.120 ms 13.762 ms 14.781 ms]
+                        thrpt:  [14.208 Melem/s 15.260 Melem/s 16.007 Melem/s]
+                 change:
+                        time:   [+84.479% +95.328% +109.62%] (p = 0.00 < 0.05)
+                        thrpt:  [−52.295% −48.804% −45.793%]
+                        Performance has regressed.
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high severe
+Benchmarking full_cycle/4x4/1key_10000msg/DropValue
+Benchmarking full_cycle/4x4/1key_10000msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/1key_10000msg/DropValue: Collecting 20 samples in estimated 3.0712 s (600 iterations)
+Benchmarking full_cycle/4x4/1key_10000msg/DropValue: Analyzing
+full_cycle/4x4/1key_10000msg/DropValue
+                        time:   [5.0824 ms 5.1090 ms 5.1380 ms]
+                        thrpt:  [40.873 Melem/s 41.106 Melem/s 41.321 Melem/s]
+                 change:
+                        time:   [+78.793% +79.864% +80.978%] (p = 0.00 < 0.05)
+                        thrpt:  [−44.745% −44.403% −44.069%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+Benchmarking full_cycle/4x4/10key_1000msg/u64
+Benchmarking full_cycle/4x4/10key_1000msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/10key_1000msg/u64: Collecting 20 samples in estimated 3.0731 s (640 iterations)
+Benchmarking full_cycle/4x4/10key_1000msg/u64: Analyzing
+full_cycle/4x4/10key_1000msg/u64
+                        time:   [4.7260 ms 4.7627 ms 4.7984 ms]
+                        thrpt:  [43.781 Melem/s 44.110 Melem/s 44.452 Melem/s]
+                 change:
+                        time:   [+72.448% +77.013% +80.411%] (p = 0.00 < 0.05)
+                        thrpt:  [−44.571% −43.507% −42.012%]
+                        Performance has regressed.
+Benchmarking full_cycle/4x4/10key_1000msg/String
+Benchmarking full_cycle/4x4/10key_1000msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/10key_1000msg/String: Collecting 20 samples in estimated 3.1253 s (220 iterations)
+Benchmarking full_cycle/4x4/10key_1000msg/String: Analyzing
+full_cycle/4x4/10key_1000msg/String
+                        time:   [12.882 ms 13.011 ms 13.130 ms]
+                        thrpt:  [16.001 Melem/s 16.147 Melem/s 16.308 Melem/s]
+                 change:
+                        time:   [+82.547% +84.826% +87.333%] (p = 0.00 < 0.05)
+                        thrpt:  [−46.619% −45.895% −45.220%]
+                        Performance has regressed.
+Benchmarking full_cycle/4x4/10key_1000msg/DropValue
+Benchmarking full_cycle/4x4/10key_1000msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/10key_1000msg/DropValue: Collecting 20 samples in estimated 3.0341 s (600 iterations)
+Benchmarking full_cycle/4x4/10key_1000msg/DropValue: Analyzing
+full_cycle/4x4/10key_1000msg/DropValue
+                        time:   [4.9991 ms 5.1212 ms 5.2879 ms]
+                        thrpt:  [39.728 Melem/s 41.022 Melem/s 42.024 Melem/s]
+                 change:
+                        time:   [+77.879% +84.068% +91.024%] (p = 0.00 < 0.05)
+                        thrpt:  [−47.651% −45.672% −43.782%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking full_cycle/4x4/100key_100msg/u64
+Benchmarking full_cycle/4x4/100key_100msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/100key_100msg/u64: Collecting 20 samples in estimated 3.0815 s (640 iterations)
+Benchmarking full_cycle/4x4/100key_100msg/u64: Analyzing
+full_cycle/4x4/100key_100msg/u64
+                        time:   [4.8110 ms 4.8424 ms 4.8759 ms]
+                        thrpt:  [43.233 Melem/s 43.532 Melem/s 43.816 Melem/s]
+                 change:
+                        time:   [+73.381% +74.926% +76.676%] (p = 0.00 < 0.05)
+                        thrpt:  [−43.399% −42.833% −42.324%]
+                        Performance has regressed.
+Benchmarking full_cycle/4x4/100key_100msg/String
+Benchmarking full_cycle/4x4/100key_100msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/100key_100msg/String: Collecting 20 samples in estimated 3.0744 s (240 iterations)
+Benchmarking full_cycle/4x4/100key_100msg/String: Analyzing
+full_cycle/4x4/100key_100msg/String
+                        time:   [12.790 ms 13.060 ms 13.508 ms]
+                        thrpt:  [15.605 Melem/s 16.141 Melem/s 16.482 Melem/s]
+                 change:
+                        time:   [+76.319% +81.695% +89.052%] (p = 0.00 < 0.05)
+                        thrpt:  [−47.105% −44.963% −43.284%]
+                        Performance has regressed.
+Found 3 outliers among 20 measurements (15.00%)
+  2 (10.00%) high mild
+  1 (5.00%) high severe
+Benchmarking full_cycle/4x4/100key_100msg/DropValue
+Benchmarking full_cycle/4x4/100key_100msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/100key_100msg/DropValue: Collecting 20 samples in estimated 3.0869 s (600 iterations)
+Benchmarking full_cycle/4x4/100key_100msg/DropValue: Analyzing
+full_cycle/4x4/100key_100msg/DropValue
+                        time:   [5.1634 ms 5.2109 ms 5.2616 ms]
+                        thrpt:  [40.064 Melem/s 40.454 Melem/s 40.826 Melem/s]
+                 change:
+                        time:   [+72.662% +74.648% +76.769%] (p = 0.00 < 0.05)
+                        thrpt:  [−43.429% −42.742% −42.083%]
+                        Performance has regressed.
+Benchmarking full_cycle/4x4/1000key_10msg/u64
+Benchmarking full_cycle/4x4/1000key_10msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/1000key_10msg/u64: Collecting 20 samples in estimated 3.0703 s (540 iterations)
+Benchmarking full_cycle/4x4/1000key_10msg/u64: Analyzing
+full_cycle/4x4/1000key_10msg/u64
+                        time:   [5.6524 ms 5.6670 ms 5.6840 ms]
+                        thrpt:  [38.353 Melem/s 38.468 Melem/s 38.568 Melem/s]
+                 change:
+                        time:   [+58.204% +62.052% +64.412%] (p = 0.00 < 0.05)
+                        thrpt:  [−39.177% −38.291% −36.791%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking full_cycle/4x4/1000key_10msg/String
+Benchmarking full_cycle/4x4/1000key_10msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/1000key_10msg/String: Collecting 20 samples in estimated 3.2560 s (240 iterations)
+Benchmarking full_cycle/4x4/1000key_10msg/String: Analyzing
+full_cycle/4x4/1000key_10msg/String
+                        time:   [13.412 ms 13.487 ms 13.566 ms]
+                        thrpt:  [16.070 Melem/s 16.164 Melem/s 16.254 Melem/s]
+                 change:
+                        time:   [+66.708% +70.784% +73.574%] (p = 0.00 < 0.05)
+                        thrpt:  [−42.388% −41.446% −40.015%]
+                        Performance has regressed.
+Benchmarking full_cycle/4x4/1000key_10msg/DropValue
+Benchmarking full_cycle/4x4/1000key_10msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/1000key_10msg/DropValue: Collecting 20 samples in estimated 3.0100 s (500 iterations)
+Benchmarking full_cycle/4x4/1000key_10msg/DropValue: Analyzing
+full_cycle/4x4/1000key_10msg/DropValue
+                        time:   [6.0894 ms 6.1912 ms 6.3402 ms]
+                        thrpt:  [34.384 Melem/s 35.211 Melem/s 35.800 Melem/s]
+                 change:
+                        time:   [+63.794% +67.203% +71.742%] (p = 0.00 < 0.05)
+                        thrpt:  [−41.773% −40.192% −38.948%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking full_cycle/4x4/10000key_1msg/u64
+Benchmarking full_cycle/4x4/10000key_1msg/u64: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/10000key_1msg/u64: Collecting 20 samples in estimated 3.0080 s (260 iterations)
+Benchmarking full_cycle/4x4/10000key_1msg/u64: Analyzing
+full_cycle/4x4/10000key_1msg/u64
+                        time:   [11.515 ms 11.999 ms 12.674 ms]
+                        thrpt:  [22.881 Melem/s 24.168 Melem/s 25.185 Melem/s]
+                 change:
+                        time:   [+35.196% +42.356% +50.719%] (p = 0.00 < 0.05)
+                        thrpt:  [−33.651% −29.753% −26.034%]
+                        Performance has regressed.
+Found 3 outliers among 20 measurements (15.00%)
+  1 (5.00%) high mild
+  2 (10.00%) high severe
+Benchmarking full_cycle/4x4/10000key_1msg/String
+Benchmarking full_cycle/4x4/10000key_1msg/String: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/10000key_1msg/String: Collecting 20 samples in estimated 3.1737 s (160 iterations)
+Benchmarking full_cycle/4x4/10000key_1msg/String: Analyzing
+full_cycle/4x4/10000key_1msg/String
+                        time:   [19.390 ms 19.504 ms 19.621 ms]
+                        thrpt:  [14.780 Melem/s 14.869 Melem/s 14.956 Melem/s]
+                 change:
+                        time:   [+50.643% +51.722% +52.913%] (p = 0.00 < 0.05)
+                        thrpt:  [−34.603% −34.090% −33.618%]
+                        Performance has regressed.
+Benchmarking full_cycle/4x4/10000key_1msg/DropValue
+Benchmarking full_cycle/4x4/10000key_1msg/DropValue: Warming up for 500.00 ms
+Benchmarking full_cycle/4x4/10000key_1msg/DropValue: Collecting 20 samples in estimated 3.1226 s (240 iterations)
+Benchmarking full_cycle/4x4/10000key_1msg/DropValue: Analyzing
+full_cycle/4x4/10000key_1msg/DropValue
+                        time:   [11.886 ms 11.968 ms 12.059 ms]
+                        thrpt:  [24.049 Melem/s 24.230 Melem/s 24.398 Melem/s]
+                 change:
+                        time:   [+35.591% +36.885% +38.148%] (p = 0.00 < 0.05)
+                        thrpt:  [−27.614% −26.946% −26.249%]
+                        Performance has regressed.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/10000key_1msg/DropValue,33.300,50.000,79.200,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/10000key_1msg/DropValue,214.608,238.258,256.454,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/10000key_1msg/DropValue,22.291,23.109,25.375,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/10000key_1msg/DropValue,16.229,17.004,19.262,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/10000key_1msg/DropValue,48.517,58.579,68.871,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/10000key_1msg/DropValue,51.612,60.654,71.092,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/10000key_1msg/DropValue,46.375,56.712,66.054,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/10000key_1msg/DropValue,48.254,58.150,67.058,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/10000key_1msg/DropValue,185.850,190.100,203.788,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/10000key_1msg/String,33.300,58.300,91.600,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/10000key_1msg/String,222.325,246.625,270.271,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/10000key_1msg/String,52.996,54.881,57.962,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/10000key_1msg/String,74.067,75.562,85.158,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/10000key_1msg/String,96.367,111.667,147.392,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/10000key_1msg/String,99.217,116.871,136.033,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/10000key_1msg/String,93.479,111.796,131.275,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/10000key_1msg/String,96.188,111.588,141.104,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/10000key_1msg/String,187.654,194.037,209.212,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/10000key_1msg/u64,29.200,45.800,75.000,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/10000key_1msg/u64,218.287,235.617,253.483,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/10000key_1msg/u64,19.784,20.423,22.598,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/10000key_1msg/u64,15.387,16.046,17.925,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/10000key_1msg/u64,48.129,58.067,67.225,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/10000key_1msg/u64,51.954,60.783,73.254,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/10000key_1msg/u64,46.133,56.567,66.479,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/10000key_1msg/u64,48.383,58.217,70.208,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/10000key_1msg/u64,186.792,190.287,204.571,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/1000key_10msg/DropValue,29.100,37.500,66.700,1055
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/1000key_10msg/DropValue,468.375,492.708,553.709,1055
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/1000key_10msg/DropValue,18.471,18.780,20.169,1055
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/1000key_10msg/DropValue,12.979,14.121,15.329,1055
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/1000key_10msg/DropValue,47.275,52.712,58.517,1055
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/1000key_10msg/DropValue,50.508,55.513,61.688,1055
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/1000key_10msg/DropValue,45.004,50.638,57.417,1055
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/1000key_10msg/DropValue,47.179,52.425,58.796,1055
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/1000key_10msg/DropValue,220.583,226.833,253.584,1055
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/1000key_10msg/String,29.200,50.000,79.200,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/1000key_10msg/String,463.834,491.250,575.209,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/1000key_10msg/String,52.269,54.133,58.855,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/1000key_10msg/String,70.796,72.517,78.300,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/1000key_10msg/String,94.158,104.496,122.892,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/1000key_10msg/String,97.550,108.204,129.829,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/1000key_10msg/String,91.271,102.312,119.508,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/1000key_10msg/String,94.217,104.467,119.083,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/1000key_10msg/String,230.459,239.500,274.250,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/1000key_10msg/u64,29.100,41.600,66.700,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/1000key_10msg/u64,447.750,479.042,553.000,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/1000key_10msg/u64,16.110,16.534,18.052,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/1000key_10msg/u64,12.300,13.379,14.746,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/1000key_10msg/u64,46.871,52.254,61.288,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/1000key_10msg/u64,50.492,55.667,63.967,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/1000key_10msg/u64,44.763,50.400,58.546,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/1000key_10msg/u64,47.179,52.404,61.271,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/1000key_10msg/u64,222.458,230.416,264.958,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/100key_100msg/DropValue,29.200,37.500,58.400,1215
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/100key_100msg/DropValue,2388.750,2427.920,2791.670,1215
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/100key_100msg/DropValue,17.238,17.587,20.526,1215
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/100key_100msg/DropValue,14.933,18.067,20.342,1215
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/100key_100msg/DropValue,42.646,46.292,56.562,1215
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/100key_100msg/DropValue,46.388,49.700,59.496,1215
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/100key_100msg/DropValue,40.442,44.717,55.046,1215
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/100key_100msg/DropValue,42.083,46.071,55.842,1215
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/100key_100msg/DropValue,408.330,419.170,481.250,1215
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/100key_100msg/String,33.300,45.800,75.000,443
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/100key_100msg/String,2345.000,2415.420,3759.160,443
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/100key_100msg/String,52.027,53.899,67.934,443
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/100key_100msg/String,73.604,84.867,94.629,443
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/100key_100msg/String,90.842,96.700,116.562,443
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/100key_100msg/String,94.188,100.767,120.092,443
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/100key_100msg/String,88.196,94.833,112.442,443
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/100key_100msg/String,90.354,97.204,114.792,443
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/100key_100msg/String,497.500,518.330,647.500,443
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/100key_100msg/u64,29.100,37.500,58.300,1235
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/100key_100msg/u64,2225.840,2268.330,2776.670,1235
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/100key_100msg/u64,15.093,15.373,19.422,1235
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/100key_100msg/u64,12.354,14.662,16.867,1235
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/100key_100msg/u64,42.304,45.746,55.954,1235
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/100key_100msg/u64,46.358,49.771,59.587,1235
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/100key_100msg/u64,40.758,44.479,54.792,1235
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/100key_100msg/u64,42.446,45.933,56.304,1235
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/100key_100msg/u64,407.500,418.750,500.840,1235
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/10key_1000msg/DropValue,29.100,37.500,70.800,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/10key_1000msg/DropValue,17883.300,18079.200,21979.100,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/10key_1000msg/DropValue,17.093,17.452,24.818,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/10key_1000msg/DropValue,12.075,12.729,16.867,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/10key_1000msg/DropValue,41.417,43.083,54.825,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/10key_1000msg/DropValue,46.067,47.150,57.546,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/10key_1000msg/DropValue,39.812,41.792,52.979,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/10key_1000msg/DropValue,41.250,43.112,54.108,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/10key_1000msg/DropValue,1995.900,2066.700,2575.000,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/10key_1000msg/String,29.100,41.700,70.800,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/10key_1000msg/String,17562.500,17895.800,26520.800,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/10key_1000msg/String,51.074,52.824,64.850,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/10key_1000msg/String,69.379,72.725,80.783,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/10key_1000msg/String,90.000,92.742,110.463,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/10key_1000msg/String,93.704,96.717,117.208,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/10key_1000msg/String,87.654,90.054,109.267,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/10key_1000msg/String,89.771,91.875,110.425,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/10key_1000msg/String,2754.100,2837.500,3370.800,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/10key_1000msg/u64,29.100,37.500,58.300,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/10key_1000msg/u64,16625.000,16741.700,20262.500,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/10key_1000msg/u64,14.975,15.237,22.180,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/10key_1000msg/u64,11.221,11.812,15.088,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/10key_1000msg/u64,41.013,42.625,53.267,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/10key_1000msg/u64,45.983,46.938,57.646,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/10key_1000msg/u64,39.796,41.383,52.246,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/10key_1000msg/u64,41.271,42.804,53.708,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/10key_1000msg/u64,2012.500,2058.300,2533.300,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/1key_10000msg/DropValue,29.100,37.500,70.900,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/1key_10000msg/DropValue,281666.000,285916.000,324291.000,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/1key_10000msg/DropValue,17.006,17.407,18.600,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/1key_10000msg/DropValue,12.054,12.142,13.467,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/1key_10000msg/DropValue,40.558,46.242,54.067,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/1key_10000msg/DropValue,44.954,50.875,58.046,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/1key_10000msg/DropValue,39.092,46.212,52.367,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/1key_10000msg/DropValue,40.513,47.308,53.575,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/1key_10000msg/DropValue,27916.000,29250.000,35667.000,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/1key_10000msg/String,33.300,41.700,79.200,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/1key_10000msg/String,276750.000,282959.000,330792.000,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/1key_10000msg/String,51.212,53.188,57.051,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/1key_10000msg/String,69.225,70.263,75.675,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/1key_10000msg/String,89.675,104.900,133.725,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/1key_10000msg/String,93.292,116.483,138.879,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/1key_10000msg/String,87.354,100.188,114.254,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/1key_10000msg/String,89.375,101.254,129.492,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/1key_10000msg/String,39833.000,41375.000,49083.000,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,16x1/1key_10000msg/u64,29.100,33.400,58.300,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,16x1/1key_10000msg/u64,261500.000,263292.000,295084.000,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,16x1/1key_10000msg/u64,14.868,15.086,16.402,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,16x1/1key_10000msg/u64,11.213,11.488,12.529,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,16x1/1key_10000msg/u64,40.083,45.112,52.779,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,16x1/1key_10000msg/u64,44.992,50.929,56.208,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,16x1/1key_10000msg/u64,38.892,45.354,51.225,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,16x1/1key_10000msg/u64,40.300,46.633,52.404,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,16x1/1key_10000msg/u64,27875.000,29208.000,33584.000,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/10000key_1msg/DropValue,33.300,50.000,87.500,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/10000key_1msg/DropValue,215.617,240.475,261.646,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/10000key_1msg/DropValue,22.232,23.274,26.441,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/10000key_1msg/DropValue,16.096,17.083,20.346,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/10000key_1msg/DropValue,48.221,58.633,76.117,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/10000key_1msg/DropValue,51.446,60.917,78.208,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/10000key_1msg/DropValue,46.462,56.908,75.717,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/10000key_1msg/DropValue,48.142,58.271,75.417,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/10000key_1msg/DropValue,185.850,191.879,206.513,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/10000key_1msg/String,33.300,54.100,79.200,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/10000key_1msg/String,221.771,240.754,260.158,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/10000key_1msg/String,53.151,54.383,56.577,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/10000key_1msg/String,73.883,75.183,81.450,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/10000key_1msg/String,96.304,109.979,123.675,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/10000key_1msg/String,99.158,114.804,126.442,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/10000key_1msg/String,93.508,110.692,119.987,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/10000key_1msg/String,95.729,109.758,123.425,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/10000key_1msg/String,187.242,191.421,201.179,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/10000key_1msg/u64,33.300,45.800,70.800,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/10000key_1msg/u64,211.812,234.871,252.225,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/10000key_1msg/u64,19.731,20.430,22.515,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/10000key_1msg/u64,15.246,16.075,17.925,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/10000key_1msg/u64,47.958,58.067,69.521,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/10000key_1msg/u64,51.837,60.767,69.879,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/10000key_1msg/u64,46.125,56.717,66.312,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/10000key_1msg/u64,48.237,58.242,68.125,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/10000key_1msg/u64,186.604,190.954,202.758,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/1000key_10msg/DropValue,29.100,37.500,62.500,1075
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/1000key_10msg/DropValue,466.750,491.084,543.375,1075
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/1000key_10msg/DropValue,18.384,18.724,20.085,1075
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/1000key_10msg/DropValue,13.158,14.108,15.675,1075
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/1000key_10msg/DropValue,47.158,52.271,58.617,1075
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/1000key_10msg/DropValue,50.483,55.325,61.246,1075
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/1000key_10msg/DropValue,44.875,50.458,57.196,1075
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/1000key_10msg/DropValue,46.821,51.888,58.471,1075
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/1000key_10msg/DropValue,219.500,225.791,252.666,1075
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/1000key_10msg/String,33.300,41.700,70.800,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/1000key_10msg/String,462.125,473.541,541.167,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/1000key_10msg/String,52.156,53.746,57.170,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/1000key_10msg/String,71.146,72.596,77.479,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/1000key_10msg/String,94.433,103.692,116.850,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/1000key_10msg/String,97.658,107.458,121.354,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/1000key_10msg/String,91.529,101.917,112.800,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/1000key_10msg/String,94.275,103.812,115.354,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/1000key_10msg/String,228.750,235.584,263.208,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/1000key_10msg/u64,29.100,37.500,58.300,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/1000key_10msg/u64,444.917,470.041,516.416,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/1000key_10msg/u64,15.769,16.309,17.814,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/1000key_10msg/u64,12.329,13.275,14.412,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/1000key_10msg/u64,46.683,51.696,57.633,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/1000key_10msg/u64,50.429,55.450,62.767,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/1000key_10msg/u64,44.696,50.125,57.079,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/1000key_10msg/u64,46.888,51.933,58.633,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/1000key_10msg/u64,221.167,226.959,254.625,1095
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/100key_100msg/DropValue,29.100,37.500,62.500,1175
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/100key_100msg/DropValue,2385.420,2418.750,2720.840,1175
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/100key_100msg/DropValue,17.235,17.516,20.188,1175
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/100key_100msg/DropValue,14.029,17.946,20.058,1175
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/100key_100msg/DropValue,42.462,46.029,55.854,1175
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/100key_100msg/DropValue,46.317,49.717,59.279,1175
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/100key_100msg/DropValue,41.125,44.550,54.954,1175
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/100key_100msg/DropValue,42.138,45.896,55.729,1175
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/100key_100msg/DropValue,407.910,418.750,479.590,1175
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/100key_100msg/String,29.100,41.700,70.800,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/100key_100msg/String,2343.330,2377.080,3235.000,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/100key_100msg/String,51.615,53.293,60.615,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/100key_100msg/String,74.150,84.213,94.992,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/100key_100msg/String,91.058,96.558,114.471,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/100key_100msg/String,94.046,99.837,116.983,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/100key_100msg/String,87.917,94.354,111.342,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/100key_100msg/String,90.792,96.375,111.821,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/100key_100msg/String,495.000,509.580,592.090,547
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/100key_100msg/u64,29.100,33.400,54.100,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/100key_100msg/u64,2223.750,2254.170,2551.250,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/100key_100msg/u64,15.100,15.304,17.636,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/100key_100msg/u64,12.042,14.562,16.517,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/100key_100msg/u64,42.483,45.729,55.587,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/100key_100msg/u64,46.250,49.504,59.133,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/100key_100msg/u64,41.000,44.312,54.154,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/100key_100msg/u64,42.292,46.013,55.754,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/100key_100msg/u64,405.830,416.250,469.170,1275
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/10key_1000msg/DropValue,29.100,33.400,62.500,1295
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/10key_1000msg/DropValue,17879.100,17979.200,20462.500,1295
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/10key_1000msg/DropValue,17.082,17.390,19.752,1295
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/10key_1000msg/DropValue,11.938,12.496,16.179,1295
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/10key_1000msg/DropValue,41.312,42.817,53.737,1295
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/10key_1000msg/DropValue,46.013,46.846,57.171,1295
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/10key_1000msg/DropValue,39.950,41.587,52.250,1295
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/10key_1000msg/DropValue,41.150,42.712,53.546,1295
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/10key_1000msg/DropValue,2000.000,2058.300,2408.400,1295
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/10key_1000msg/String,33.300,45.800,83.300,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/10key_1000msg/String,17562.500,18316.700,43325.000,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/10key_1000msg/String,51.059,53.676,67.883,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/10key_1000msg/String,69.300,72.879,81.354,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/10key_1000msg/String,90.425,93.812,113.283,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/10key_1000msg/String,93.800,97.133,117.888,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/10key_1000msg/String,87.717,91.042,109.829,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/10key_1000msg/String,89.733,92.717,112.975,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/10key_1000msg/String,2754.200,2908.300,3404.200,567
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/10key_1000msg/u64,29.100,33.400,62.500,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/10key_1000msg/u64,16604.100,16795.800,21145.800,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/10key_1000msg/u64,14.980,15.305,22.993,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/10key_1000msg/u64,11.096,11.817,15.037,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/10key_1000msg/u64,41.013,42.925,53.862,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/10key_1000msg/u64,45.938,47.150,57.304,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/10key_1000msg/u64,39.892,41.792,52.346,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/10key_1000msg/u64,41.112,42.792,53.829,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/10key_1000msg/u64,2008.300,2066.700,2558.300,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/1key_10000msg/DropValue,29.200,37.500,83.400,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/1key_10000msg/DropValue,281666.000,288500.000,323917.000,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/1key_10000msg/DropValue,16.959,17.548,19.396,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/1key_10000msg/DropValue,11.954,12.279,14.283,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/1key_10000msg/DropValue,40.583,47.337,55.004,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/1key_10000msg/DropValue,44.992,51.075,61.571,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/1key_10000msg/DropValue,39.133,46.337,54.021,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/1key_10000msg/DropValue,40.492,47.296,54.900,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/1key_10000msg/DropValue,27958.000,30125.000,35750.000,1255
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/1key_10000msg/String,29.200,41.700,75.000,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/1key_10000msg/String,276667.000,282541.000,311875.000,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/1key_10000msg/String,54.510,56.025,58.743,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/1key_10000msg/String,69.246,70.396,75.062,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/1key_10000msg/String,89.754,102.458,130.308,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/1key_10000msg/String,93.242,116.571,137.637,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/1key_10000msg/String,87.204,99.421,112.283,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/1key_10000msg/String,89.221,104.067,128.158,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/1key_10000msg/String,39834.000,41375.000,46750.000,527
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x1/1key_10000msg/u64,29.100,33.400,50.000,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x1/1key_10000msg/u64,261500.000,262833.000,282959.000,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x1/1key_10000msg/u64,14.842,15.027,15.903,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x1/1key_10000msg/u64,11.050,11.479,12.312,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x1/1key_10000msg/u64,40.038,45.079,52.112,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x1/1key_10000msg/u64,45.096,50.904,56.100,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x1/1key_10000msg/u64,38.996,45.438,51.079,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x1/1key_10000msg/u64,40.271,45.696,51.962,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x1/1key_10000msg/u64,27916.000,29500.000,32708.000,1315
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/10000key_1msg/DropValue,37.500,79.200,104.200,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/10000key_1msg/DropValue,44.500,46.295,48.301,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/10000key_1msg/DropValue,17.870,18.466,19.183,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/10000key_1msg/DropValue,16.717,18.496,23.171,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/10000key_1msg/DropValue,50.888,62.733,83.071,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/10000key_1msg/DropValue,53.992,66.571,83.608,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/10000key_1msg/DropValue,48.867,61.292,82.967,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/10000key_1msg/DropValue,50.775,65.225,85.092,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/10000key_1msg/DropValue,34.012,36.336,38.171,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/10000key_1msg/String,45.900,79.100,104.200,75
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/10000key_1msg/String,44.955,47.190,49.232,75
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/10000key_1msg/String,46.650,47.620,48.751,75
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/10000key_1msg/String,74.767,78.954,90.625,75
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/10000key_1msg/String,104.363,129.121,200.996,75
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/10000key_1msg/String,104.217,126.692,145.704,75
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/10000key_1msg/String,100.062,121.554,170.725,75
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/10000key_1msg/String,105.275,123.871,152.342,75
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/10000key_1msg/String,34.666,36.262,38.014,75
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/10000key_1msg/u64,37.500,70.900,87.500,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/10000key_1msg/u64,44.358,45.397,47.516,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/10000key_1msg/u64,16.371,16.721,17.254,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/10000key_1msg/u64,15.383,16.796,20.483,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/10000key_1msg/u64,51.338,61.121,78.912,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/10000key_1msg/u64,54.883,66.633,78.983,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/10000key_1msg/u64,49.317,60.083,78.275,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/10000key_1msg/u64,51.333,63.467,80.425,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/10000key_1msg/u64,33.580,35.728,38.226,151
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/1000key_10msg/DropValue,41.600,62.500,95.800,263
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/1000key_10msg/DropValue,59.435,61.195,68.677,263
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/1000key_10msg/DropValue,16.779,16.989,17.636,263
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/1000key_10msg/DropValue,13.213,14.275,15.767,263
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/1000key_10msg/DropValue,47.508,51.579,61.133,263
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/1000key_10msg/DropValue,50.575,56.904,64.729,263
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/1000key_10msg/DropValue,44.754,50.621,59.850,263
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/1000key_10msg/DropValue,47.388,52.742,61.017,263
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/1000key_10msg/DropValue,34.203,38.112,41.896,263
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/1000key_10msg/String,33.400,70.800,91.700,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/1000key_10msg/String,59.516,62.594,69.430,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/1000key_10msg/String,45.603,46.392,47.762,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/1000key_10msg/String,71.546,73.487,78.317,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/1000key_10msg/String,94.642,105.812,123.925,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/1000key_10msg/String,98.037,111.200,128.637,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/1000key_10msg/String,91.717,108.667,120.604,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/1000key_10msg/String,94.408,106.883,122.725,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/1000key_10msg/String,35.349,39.107,43.706,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/1000key_10msg/u64,37.500,54.200,75.000,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/1000key_10msg/u64,58.099,60.200,66.612,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/1000key_10msg/u64,15.108,15.395,16.086,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/1000key_10msg/u64,12.129,13.300,14.688,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/1000key_10msg/u64,47.171,52.367,59.913,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/1000key_10msg/u64,50.479,55.996,63.200,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/1000key_10msg/u64,44.725,50.167,61.038,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/1000key_10msg/u64,47.138,53.004,61.938,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/1000key_10msg/u64,34.180,38.398,42.214,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/100key_100msg/DropValue,33.300,54.100,83.300,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/100key_100msg/DropValue,179.609,186.536,261.953,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/100key_100msg/DropValue,16.040,16.334,17.010,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/100key_100msg/DropValue,14.613,18.308,20.363,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/100key_100msg/DropValue,42.817,46.517,57.067,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/100key_100msg/DropValue,46.496,50.133,60.408,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/100key_100msg/DropValue,41.312,45.421,56.471,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/100key_100msg/DropValue,42.754,46.288,56.700,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/100key_100msg/DropValue,45.807,51.302,58.958,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/100key_100msg/String,41.600,70.800,83.400,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/100key_100msg/String,178.619,200.833,296.979,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/100key_100msg/String,44.770,46.215,48.405,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/100key_100msg/String,78.446,85.237,96.142,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/100key_100msg/String,91.579,98.562,113.317,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/100key_100msg/String,94.696,105.258,118.008,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/100key_100msg/String,88.654,103.138,116.225,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/100key_100msg/String,91.562,100.912,114.871,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/100key_100msg/String,53.281,58.828,66.406,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/100key_100msg/u64,33.300,50.000,75.000,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/100key_100msg/u64,165.886,181.119,297.266,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/100key_100msg/u64,14.563,15.188,16.331,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/100key_100msg/u64,12.363,14.779,17.204,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/100key_100msg/u64,42.413,46.800,56.458,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/100key_100msg/u64,46.379,51.362,60.529,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/100key_100msg/u64,41.217,45.483,56.258,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/100key_100msg/u64,42.587,47.638,58.708,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/100key_100msg/u64,45.755,51.927,62.708,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/10key_1000msg/DropValue,33.300,50.000,83.400,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/10key_1000msg/DropValue,1148.175,1233.331,2965.100,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/10key_1000msg/DropValue,16.168,16.862,17.960,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/10key_1000msg/DropValue,12.067,12.825,16.929,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/10key_1000msg/DropValue,41.621,43.554,54.008,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/10key_1000msg/DropValue,46.046,48.108,57.142,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/10key_1000msg/DropValue,39.896,42.225,52.650,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/10key_1000msg/DropValue,41.179,43.671,54.300,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/10key_1000msg/DropValue,145.831,163.806,203.387,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/10key_1000msg/String,37.500,58.400,79.200,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/10key_1000msg/String,1132.031,1217.188,2633.075,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/10key_1000msg/String,44.647,45.061,48.003,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/10key_1000msg/String,69.338,72.117,79.071,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/10key_1000msg/String,90.421,92.067,108.167,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/10key_1000msg/String,93.883,96.142,114.037,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/10key_1000msg/String,87.721,92.108,108.142,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/10key_1000msg/String,89.737,91.608,109.246,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/10key_1000msg/String,194.794,210.938,239.062,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/10key_1000msg/u64,33.300,45.900,66.600,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/10key_1000msg/u64,1063.544,1092.969,1407.812,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/10key_1000msg/u64,14.726,14.930,15.661,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/10key_1000msg/u64,11.050,11.767,14.725,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/10key_1000msg/u64,41.233,42.492,52.383,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/10key_1000msg/u64,45.967,46.975,56.354,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/10key_1000msg/u64,39.888,41.388,51.538,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/10key_1000msg/u64,41.283,42.554,52.617,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/10key_1000msg/u64,146.875,157.031,186.975,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/1key_10000msg/DropValue,33.300,54.100,87.500,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/1key_10000msg/DropValue,17638.062,18114.562,20518.250,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/1key_10000msg/DropValue,16.101,16.449,16.894,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/1key_10000msg/DropValue,11.967,12.167,13.283,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/1key_10000msg/DropValue,40.546,47.454,53.663,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/1key_10000msg/DropValue,45.246,51.175,58.871,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/1key_10000msg/DropValue,39.171,46.304,51.804,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/1key_10000msg/DropValue,40.471,47.371,52.946,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/1key_10000msg/DropValue,1781.250,1921.875,2273.438,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/1key_10000msg/String,37.500,62.500,87.500,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/1key_10000msg/String,17354.125,18263.000,20437.500,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/1key_10000msg/String,44.701,45.500,46.195,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/1key_10000msg/String,69.463,70.412,75.254,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/1key_10000msg/String,90.017,96.692,123.379,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/1key_10000msg/String,93.446,118.092,140.367,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/1key_10000msg/String,87.217,101.171,112.683,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/1key_10000msg/String,89.258,96.513,124.242,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/1key_10000msg/String,2544.250,2718.750,3354.188,115
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,1x16/1key_10000msg/u64,29.200,50.000,70.800,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,1x16/1key_10000msg/u64,16372.375,16804.688,19205.750,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,1x16/1key_10000msg/u64,14.732,14.967,15.416,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,1x16/1key_10000msg/u64,11.042,11.467,13.225,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,1x16/1key_10000msg/u64,40.087,45.004,52.696,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,1x16/1key_10000msg/u64,45.221,50.996,57.933,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,1x16/1key_10000msg/u64,39.008,45.950,52.121,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,1x16/1key_10000msg/u64,40.263,44.642,51.988,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,1x16/1key_10000msg/u64,1770.875,1898.438,2299.500,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/10000key_1msg/DropValue,33.300,62.500,95.900,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/10000key_1msg/DropValue,83.227,85.807,93.875,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/10000key_1msg/DropValue,20.281,20.843,22.321,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/10000key_1msg/DropValue,16.337,17.208,21.067,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/10000key_1msg/DropValue,48.737,59.358,78.150,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/10000key_1msg/DropValue,51.796,61.438,81.392,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/10000key_1msg/DropValue,46.587,57.221,73.717,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/10000key_1msg/DropValue,48.737,58.942,79.175,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/10000key_1msg/DropValue,64.889,66.700,72.664,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/10000key_1msg/String,37.500,66.700,91.700,191
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/10000key_1msg/String,85.076,87.747,93.627,191
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/10000key_1msg/String,48.668,49.675,51.265,191
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/10000key_1msg/String,74.192,75.733,84.921,191
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/10000key_1msg/String,97.071,113.183,143.863,191
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/10000key_1msg/String,100.196,116.483,132.142,191
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/10000key_1msg/String,94.654,111.558,137.125,191
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/10000key_1msg/String,96.954,112.954,134.221,191
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/10000key_1msg/String,65.643,67.425,71.547,191
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/10000key_1msg/u64,33.300,62.500,91.700,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/10000key_1msg/u64,82.740,86.480,94.935,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/10000key_1msg/u64,16.357,17.030,18.663,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/10000key_1msg/u64,15.233,16.233,19.708,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/10000key_1msg/u64,48.362,60.212,78.708,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/10000key_1msg/u64,52.183,62.283,83.729,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/10000key_1msg/u64,46.663,57.983,77.912,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/10000key_1msg/u64,48.450,60.558,79.771,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/10000key_1msg/u64,65.311,68.094,74.434,323
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/1000key_10msg/DropValue,33.300,45.800,83.400,627
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/1000key_10msg/DropValue,145.469,150.885,177.094,627
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/1000key_10msg/DropValue,17.275,17.727,18.912,627
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/1000key_10msg/DropValue,13.071,14.213,16.137,627
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/1000key_10msg/DropValue,47.587,53.233,63.654,627
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/1000key_10msg/DropValue,50.596,55.862,69.308,627
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/1000key_10msg/DropValue,44.942,51.067,64.058,627
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/1000key_10msg/DropValue,47.479,53.104,64.200,627
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/1000key_10msg/DropValue,73.552,77.198,88.219,627
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/1000key_10msg/String,33.400,54.100,79.200,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/1000key_10msg/String,145.583,150.438,169.875,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/1000key_10msg/String,45.765,46.898,50.506,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/1000key_10msg/String,71.008,72.533,77.933,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/1000key_10msg/String,94.662,105.263,119.792,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/1000key_10msg/String,97.829,108.771,124.037,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/1000key_10msg/String,91.458,102.900,125.142,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/1000key_10msg/String,94.292,104.963,119.967,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/1000key_10msg/String,76.000,79.541,91.219,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/1000key_10msg/u64,33.300,41.700,62.500,667
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/1000key_10msg/u64,140.354,143.875,162.427,667
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/1000key_10msg/u64,15.381,15.754,16.361,667
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/1000key_10msg/u64,12.283,13.258,14.617,667
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/1000key_10msg/u64,47.233,52.438,59.004,667
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/1000key_10msg/u64,50.554,55.621,62.933,667
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/1000key_10msg/u64,44.779,50.312,57.333,667
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/1000key_10msg/u64,47.458,52.754,59.138,667
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/1000key_10msg/u64,73.771,76.396,84.427,667
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/100key_100msg/DropValue,29.200,41.700,75.000,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/100key_100msg/DropValue,625.523,640.523,939.168,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/100key_100msg/DropValue,16.272,16.661,18.905,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/100key_100msg/DropValue,14.529,18.279,20.629,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/100key_100msg/DropValue,42.725,46.379,57.779,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/100key_100msg/DropValue,46.483,50.583,60.729,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/100key_100msg/DropValue,41.075,45.000,57.175,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/100key_100msg/DropValue,42.579,46.446,57.013,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/100key_100msg/DropValue,119.062,125.832,156.457,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/100key_100msg/String,33.300,50.000,79.200,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/100key_100msg/String,617.188,642.602,922.082,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/100key_100msg/String,46.082,47.120,51.417,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/100key_100msg/String,73.796,84.533,94.125,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/100key_100msg/String,91.004,97.796,114.533,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/100key_100msg/String,94.333,100.933,118.154,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/100key_100msg/String,88.454,95.537,112.821,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/100key_100msg/String,90.683,97.200,114.092,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/100key_100msg/String,141.667,150.105,179.375,303
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/100key_100msg/u64,29.200,37.500,62.500,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/100key_100msg/u64,583.020,596.145,871.355,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/100key_100msg/u64,14.694,15.024,17.013,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/100key_100msg/u64,12.129,14.792,17.104,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/100key_100msg/u64,42.371,46.033,56.150,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/100key_100msg/u64,46.346,50.017,60.062,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/100key_100msg/u64,40.804,44.504,54.942,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/100key_100msg/u64,42.300,45.979,56.492,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/100key_100msg/u64,118.438,124.062,150.835,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/10key_1000msg/DropValue,33.300,41.700,83.300,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/10key_1000msg/DropValue,4501.025,4661.450,8636.450,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/10key_1000msg/DropValue,16.387,17.032,19.885,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/10key_1000msg/DropValue,12.004,12.904,16.658,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/10key_1000msg/DropValue,41.542,43.800,55.596,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/10key_1000msg/DropValue,46.054,48.246,58.900,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/10key_1000msg/DropValue,39.871,43.079,54.575,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/10key_1000msg/DropValue,41.158,43.592,55.337,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/10key_1000msg/DropValue,519.800,560.425,736.475,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/10key_1000msg/String,33.300,58.400,91.600,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/10key_1000msg/String,4432.275,5081.250,12670.850,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/10key_1000msg/String,46.221,50.155,57.492,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/10key_1000msg/String,69.392,73.892,83.767,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/10key_1000msg/String,91.204,96.817,115.892,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/10key_1000msg/String,94.287,100.546,121.467,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/10key_1000msg/String,88.621,96.125,116.025,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/10key_1000msg/String,90.646,97.925,118.692,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/10key_1000msg/String,711.450,798.975,969.800,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/10key_1000msg/u64,29.100,41.700,66.700,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/10key_1000msg/u64,4183.325,4381.250,8782.300,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/10key_1000msg/u64,14.804,15.433,18.630,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/10key_1000msg/u64,11.129,11.767,15.358,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/10key_1000msg/u64,41.038,43.454,54.108,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/10key_1000msg/u64,45.987,47.775,58.008,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/10key_1000msg/u64,40.033,42.083,53.204,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/10key_1000msg/u64,41.263,43.383,54.075,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/10key_1000msg/u64,523.950,559.375,777.075,767
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/1key_10000msg/DropValue,33.300,45.800,87.500,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/1key_10000msg/DropValue,70479.250,71812.500,85364.750,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/1key_10000msg/DropValue,16.281,16.831,18.078,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/1key_10000msg/DropValue,11.938,12.154,13.996,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/1key_10000msg/DropValue,40.546,46.996,56.875,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/1key_10000msg/DropValue,44.904,52.250,65.192,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/1key_10000msg/DropValue,39.079,46.454,55.629,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/1key_10000msg/DropValue,40.475,47.904,56.450,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/1key_10000msg/DropValue,6979.000,7458.500,9010.500,727
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/1key_10000msg/String,33.300,66.700,95.900,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/1key_10000msg/String,69250.000,74864.500,87968.750,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/1key_10000msg/String,46.039,47.946,54.904,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/1key_10000msg/String,69.350,72.308,82.079,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/1key_10000msg/String,91.604,102.575,134.550,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/1key_10000msg/String,93.638,117.537,144.300,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/1key_10000msg/String,89.071,100.737,124.963,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/1key_10000msg/String,90.808,109.875,135.667,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/1key_10000msg/String,10083.250,11010.500,12260.500,283
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,create,4x4/1key_10000msg/u64,33.300,50.000,75.000,747
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,drop,4x4/1key_10000msg/u64,65437.500,68364.500,79948.000,747
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,recv,4x4/1key_10000msg/u64,14.734,15.324,16.450,747
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_no_receivers,4x4/1key_10000msg/u64,11.121,11.537,13.537,747
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/arc_sender,4x4/1key_10000msg/u64,40.117,46.592,53.683,747
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/clone_sender,4x4/1key_10000msg/u64,45.087,51.237,59.150,747
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/guard_held,4x4/1key_10000msg/u64,38.883,45.321,53.825,747
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,send_with_receivers/rc_sender,4x4/1key_10000msg/u64,40.288,46.796,54.171,747
+panic-fix-clone-sender,28331fd-dirty,local,current_thread_interleaving,1,500,3000,20,flat,phase,subscribe,4x4/1key_10000msg/u64,7021.000,7604.000,9239.750,747

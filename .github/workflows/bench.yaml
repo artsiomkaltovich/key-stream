@@ -7,18 +7,19 @@ name: Benchmarks
 #
 # READ THE NUMBERS WITH CARE. GitHub runners are shared VMs with noisy
 # neighbours; run-to-run spread here is far worse than on a quiet laptop.
-# Treat this as confirmation of large, directional effects (the ~14% penalty on
-# `clone_sender`) and NOT as a way to resolve sub-nanosecond differences such as
-# `rc_sender` vs `arc_sender`. Those need a quiet machine.
+# Treat this as confirmation of large, directional effects — the ~5.8 ns
+# (~12%) penalty on `clone_sender` versus ~2.0 ns for the wrapped handles.
+# It cannot settle `rc_sender` vs `arc_sender`: locally those differ by a mean
+# of 0.12 ns over 60 cells, with `arc` ahead in 18 of them. That is a coin flip
+# on a quiet machine and will be pure noise here.
+#
+# Full matrix on every trigger, both feature configurations. This is expensive
+# — roughly 15 min per configuration locally — and deliberately so: a filtered
+# or `--quick` run produces phase numbers that cannot be compared against the
+# local baselines in bench-results/.
 
 on:
   workflow_dispatch:
-    inputs:
-      scope:
-        description: "full = whole matrix, subset = 1x1 modes only"
-        type: choice
-        options: [full, subset]
-        default: full
   push:
     branches: [master]
   pull_request:
@@ -79,21 +80,33 @@ jobs:
       - name: Clippy
         run: cargo clippy --locked --all-targets ${{ steps.flags.outputs.features }} -- -D warnings
 
-      - name: Run benchmarks
-        env:
-          # PRs run one mode rather than the whole matrix. Deliberately NOT
-          # criterion's `--quick`: that collapses the iteration count, which
-          # starves the side-channel phase accumulator and makes the breakdown
-          # meaningless. Narrowing the filter keeps full statistical settings.
-          SCOPE: ${{ github.event_name == 'pull_request' && 'subset' || github.event.inputs.scope || 'full' }}
+      # Always the full matrix: 60 IDs (4 modes x 5 distributions x 3 value
+      # types) per feature configuration. Locally that is ~15 min per config on
+      # a quiet machine; budget more on a shared runner.
+      #
+      # Deliberately NOT criterion's `--quick`, and no filter. `--quick`
+      # collapses the iteration count, which starves the side-channel phase
+      # accumulator and makes the whole breakdown meaningless — the cheap-looking
+      # option produces numbers that cannot be compared to anything.
+      - name: Run benchmarks (full matrix)
+        timeout-minutes: 90
         run: |
-          if [ "$SCOPE" = "subset" ]; then
-            FILTER='1x1/'
-          else
-            FILTER=''
-          fi
           cargo bench --locked --bench key_stream ${{ steps.flags.outputs.features }} \
-            -- --noplot $FILTER | tee bench-output.txt
+            -- --noplot | tee bench-output.txt
+
+      # A short cell count guards against a filter or config change silently
+      # shrinking coverage: 60 IDs, and 7 phases per ID without the feature
+      # (2 send variants) or 9 with it (4 send variants).
+      - name: Check coverage
+        run: |
+          ids=$(grep -c '^full_cycle/' bench-output.txt || true)
+          if [ "${{ matrix.variants }}" = "on" ]; then want_rows=540; else want_rows=420; fi
+          rows=$(grep -c ',phase,' bench-output.txt || true)
+          echo "ids=$ids phase_rows=$rows (want 60 / $want_rows)"
+          [ "$ids" -eq 60 ] || { echo "::error::expected 60 benchmark IDs, got $ids"; exit 1; }
+          [ "$rows" -eq "$want_rows" ] || { echo "::error::expected $want_rows phase rows, got $rows"; exit 1; }
+          discarded=$(grep -c ',FAILED' bench-output.txt || true)
+          [ "$discarded" -eq 0 ] || echo "::warning::$discarded discarded-sample rows — see phases.csv"
 
       # The phase breakdown is emitted on stdout as CSV, not written by
       # criterion, so it has to be pulled out of the log explicitly.

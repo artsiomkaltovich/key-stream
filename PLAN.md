@@ -144,35 +144,37 @@ so eviction-drop behavior is measured without allocator noise.
 **Three `send` implementations in the `send_with_receivers` phase.** This is how the hazard-A fix
 gets chosen, and it is the reason that phase exists in this form:
 
-| Variant | What it does | Atomic RMWs per send | Isolated | **Measured in-context** |
+| Variant | What it does | Atomic RMWs per send | Isolated | **Measured, all 60 cells (mean Δ)** |
 |---|---|---|---|---|
-| `guard_held` | historical baseline — the guard spans the broadcast. **Unsafe**, kept only via bench helper methods | 0 | — | 40.85 ns (baseline) |
-| `clone_sender` | clone `broadcast::Sender` out, release guard, broadcast | 4 | 16.4 ns | **+5.81 ns** |
-| `rc_sender` | map entry holds `Rc<broadcast::Sender<V>>`; clone that | 0 (non-atomic) | 4.1 ns | **+0.03 ns** |
-| `arc_sender` | map entry holds `Arc<broadcast::Sender<V>>`; clone that | 2 | 9.6 ns | **−0.23 ns** |
+| `guard_held` | historical baseline — the guard spans the broadcast. **Unsafe**, kept only via bench helper methods | 0 | — | baseline |
+| `clone_sender` | clone `broadcast::Sender` out, release guard, broadcast | 4 | 16.4 ns | **+5.77 ns** |
+| `rc_sender` | map entry holds `Rc<broadcast::Sender<V>>`; clone that | 0 (non-atomic) | 4.1 ns | **+1.96 ns** |
+| `arc_sender` | map entry holds `Arc<broadcast::Sender<V>>`; clone that | 2 | 9.6 ns | **+2.08 ns** |
 
-Cell `1x1/1key_10000msg/u64`, `min` over three independent runs; run-to-run spread was 0.05-0.5 ns,
-so these separations are real and not noise.
+Full matrix, `min` per cell, arm64, zero discards —
+[bench-results/local-full-variants/](bench-results/local-full-variants/). Medians track the means
+to within 0.1 ns; `clone_sender` never fell below +4.16 in any cell.
 
-**Two findings that arithmetic would have got wrong.**
+**`Rc` vs `Arc` is a coin flip.** Head-to-head over 60 cells: mean +0.12 ns, median +0.10,
+range −0.91 … +0.80, `arc` ahead in 18 of 60. The atomic refcount costs nothing measurable at this
+scale — so the handle choice does **not** argue for or against the local/shared split.
 
-*Releasing the guard is not a cost — it is a small win.* `arc_sender` does everything `guard_held`
-does **plus** an `Arc` clone and a guard release, yet is reproducibly ~0.23 ns faster (spread
-0.07 ns). The likely mechanism: while the `Ref` guard is live, `sender` is a reference *into* the
-`RefCell`'s contents, so the compiler cannot keep the `Sender` pointer in a register across
-`broadcast::Sender::send`. Cloning into an owned local frees it to do so, and that pays for the
-refcount bump. Whatever the exact cause, the direction is settled by measurement.
+**The `num_tx` increment is the entire cost.** `Sender::clone` is `Arc::clone` plus a `num_tx`
+bump. Every variant that skips that bump lands at ~2 ns; the one that pays it costs ~5.8 ns. Atomic
+count does not order the results — what separates cleanly is whether tokio's `Sender::clone` is
+called at all.
 
-*The `num_tx` increment is the entire cost.* `Sender::clone` is `Arc::clone` plus a `num_tx`
-bump — and the two handle variants that skip it are free, while the one that pays it costs 5.81 ns.
-The atomic count alone does not order the results (`arc_sender` has two RMWs and beats the
-zero-RMW `rc_sender` by 0.26 ns, which is at the edge of reproducibility and should be read as
-"indistinguishable"). What separates cleanly is one thing only: whether tokio's `Sender::clone` is
-called.
+> **Correction.** An earlier single-cell reading (`1x1/1key_10000msg/u64`) put `rc_sender` at
+> +0.03 ns and `arc_sender` at −0.23 ns, and was recorded here as "the handle variants are free".
+> That was an artifact of the hottest possible map — one entry, permanently cache-resident. Across
+> the sweep both cost ~2 ns. The direction held; the magnitude did not. Single-cell results have now
+> been wrong twice (see also the fixed-variant-order bias); read the matrix, not a cell.
 
-**Consequence:** the safe options are free on both backends. `clone_sender` — which currently
-ships — is the only one that costs anything. Contention is still unmeasured; `16x1` and `4x4` on a
-real shared backend could still reorder this.
+**Consequence:** the safe options cost ~2 ns on a 45-100 ns send — cheap, not free. `clone_sender`,
+which currently ships, is ~3× that. Contention remains unmeasured: every number above is
+single-threaded, so `16x1` and `4x4` show scheduling interleave rather than lock contention, and
+the case where `guard_held` blocks writers cannot appear until a real shared backend runs on a
+multi-thread runtime.
 
 Current branch status: shipping `KeySender::send` uses `clone_sender` — the most expensive of the
 correct options — and `guard_held` survives only as a bench helper.
