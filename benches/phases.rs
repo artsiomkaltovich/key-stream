@@ -1,4 +1,3 @@
-use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use futures::future::join_all;
 use key_stream::{KeyReceiver, KeySender, KeyStream, Value};
 use std::future::Future;
@@ -61,6 +60,8 @@ const DISTRIBUTIONS: [Distribution; 3] = [
     },
 ];
 
+const WARMUP_PASSES: usize = 3;
+const SAMPLE_PASSES: usize = 50;
 const MAX_CLEANUP_YIELDS: usize = 10_000;
 const MAX_CLEANUP_WAIT: Duration = Duration::from_secs(1);
 
@@ -92,6 +93,14 @@ impl BenchValue for String {
 impl Distribution {
     fn total_sends(self) -> usize {
         self.keys * self.messages_per_key
+    }
+
+    fn recv_messages(self, mode: Mode) -> usize {
+        self.total_sends() * mode.receivers_per_key
+    }
+
+    fn receivers(self, mode: Mode) -> usize {
+        self.keys * mode.receivers_per_key
     }
 }
 
@@ -177,63 +186,107 @@ async fn wait_for_cleanup<V: BenchValue>(stream: &KeyStream<u64, V>) {
     panic!("cleanup did not finish within yield budget");
 }
 
-async fn run_full_cycle_once<V: BenchValue>(mode: Mode, dist: Distribution) -> Duration {
-    let start = Instant::now();
+fn per_op_ns(duration: Duration, count: usize) -> f64 {
+    let denom = count.max(1) as f64;
+    (duration.as_secs_f64() * 1_000_000_000.0) / denom
+}
+
+async fn run_pass<V: BenchValue>(mode: Mode, dist: Distribution) -> [f64; 6] {
+    let mut out = [0.0; 6];
+
+    let create_start = Instant::now();
     let stream = KeyStream::<u64, V>::new(dist.messages_per_key.saturating_add(1).max(2));
     let sender = stream.sender();
+    out[0] = per_op_ns(create_start.elapsed(), 1);
 
+    let subscribe_start = Instant::now();
     let mut receivers = subscribe_receivers(&sender, mode, dist).await;
-    send_messages(&sender, mode, dist, false).await;
-    send_messages(&sender, mode, dist, true).await;
-    recv_all(&mut receivers, dist).await;
+    out[1] = per_op_ns(subscribe_start.elapsed(), dist.receivers(mode));
 
+    let send_with_start = Instant::now();
+    send_messages(&sender, mode, dist, false).await;
+    out[2] = per_op_ns(send_with_start.elapsed(), dist.total_sends());
+
+    let send_none_start = Instant::now();
+    send_messages(&sender, mode, dist, true).await;
+    out[3] = per_op_ns(send_none_start.elapsed(), dist.total_sends());
+
+    let recv_start = Instant::now();
+    recv_all(&mut receivers, dist).await;
+    out[4] = per_op_ns(recv_start.elapsed(), dist.recv_messages(mode));
+
+    let drop_start = Instant::now();
     drop(receivers);
     wait_for_cleanup(&stream).await;
+    out[5] = per_op_ns(drop_start.elapsed(), dist.receivers(mode));
 
     drop(sender);
     drop(stream);
-    start.elapsed()
+
+    out
 }
 
-fn bench_full_cycle_for_value<V: BenchValue>(
-    group: &mut criterion::BenchmarkGroup<'_, criterion::measurement::WallTime>,
-    rt: &Runtime,
-    mode: Mode,
-    dist: Distribution,
-) {
-    let id = format!("{}/{}/{}", mode.name, dist.name, V::label());
-    group.throughput(Throughput::Elements(dist.total_sends() as u64));
-    group.bench_function(BenchmarkId::from_parameter(id), |b| {
-        b.iter_custom(|iters| {
-            rt.block_on(async move {
-                run_on_localset(async move {
-                    let mut total = Duration::ZERO;
-                    for _ in 0..iters {
-                        total += run_full_cycle_once::<V>(mode, dist).await;
-                    }
-                    total
-                })
-                .await
-            })
-        });
-    });
+fn min_med_max(samples: &mut [f64]) -> (f64, f64, f64) {
+    samples.sort_by(|a, b| a.partial_cmp(b).expect("nan in sample"));
+    let min = samples[0];
+    let max = samples[samples.len() - 1];
+    let mid = samples.len() / 2;
+    let med = if samples.len().is_multiple_of(2) {
+        (samples[mid - 1] + samples[mid]) / 2.0
+    } else {
+        samples[mid]
+    };
+    (min, med, max)
 }
 
-fn bench_full_cycle(c: &mut Criterion) {
-    let rt = runtime();
-    let mut group = c.benchmark_group("full_cycle");
-    group.sample_size(40);
-    group.measurement_time(Duration::from_secs(12));
+async fn run_cell<V: BenchValue>(mode: Mode, dist: Distribution) {
+    for _ in 0..WARMUP_PASSES {
+        let _ = run_pass::<V>(mode, dist).await;
+    }
 
-    for mode in MODES {
-        for dist in DISTRIBUTIONS {
-            bench_full_cycle_for_value::<u64>(&mut group, &rt, mode, dist);
-            bench_full_cycle_for_value::<String>(&mut group, &rt, mode, dist);
+    let mut phases: [Vec<f64>; 6] = std::array::from_fn(|_| Vec::with_capacity(SAMPLE_PASSES));
+    for _ in 0..SAMPLE_PASSES {
+        let pass = run_pass::<V>(mode, dist).await;
+        for (idx, value) in pass.into_iter().enumerate() {
+            phases[idx].push(value);
         }
     }
 
-    group.finish();
+    let phase_names = [
+        "create",
+        "subscribe",
+        "send_with_receivers/guard_held",
+        "send_no_receivers",
+        "recv",
+        "drop",
+    ];
+
+    for (idx, name) in phase_names.into_iter().enumerate() {
+        let (min, med, max) = min_med_max(&mut phases[idx]);
+        println!(
+            "{}/{}/{}/{},{:.3},{:.3},{:.3}",
+            name,
+            mode.name,
+            dist.name,
+            V::label(),
+            min,
+            med,
+            max
+        );
+    }
 }
 
-criterion_group!(benches, bench_full_cycle);
-criterion_main!(benches);
+fn main() {
+    let rt = runtime();
+    rt.block_on(async {
+        run_on_localset(async {
+            for mode in MODES {
+                for dist in DISTRIBUTIONS {
+                    run_cell::<u64>(mode, dist).await;
+                    run_cell::<String>(mode, dist).await;
+                }
+            }
+        })
+        .await;
+    });
+}

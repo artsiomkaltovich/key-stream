@@ -311,8 +311,10 @@ fn optimize_dict_mem<K: Key, V: Value>(streams: &mut HashMap<K, broadcast::Sende
 
 #[cfg(test)]
 mod tests {
+    use std::cell::Cell;
     use std::future::Future;
     use std::pin::Pin;
+    use std::rc::Rc;
     use tokio::task::LocalSet;
     use tokio::time::{Duration, timeout};
 
@@ -765,6 +767,66 @@ mod tests {
             let msg = timeout(Duration::from_secs(1), stream.collect::<Vec<_>>()).await;
             let msg = msg.expect("stream did not terminate after close");
             assert_eq!(msg, vec![Ok("value".to_string())]);
+        })
+        .await;
+    }
+
+    #[derive(Clone)]
+    struct ReentrantDrop {
+        armed: Rc<Cell<bool>>,
+        on_drop: Rc<dyn Fn()>,
+    }
+
+    impl Drop for ReentrantDrop {
+        fn drop(&mut self) {
+            if self.armed.replace(false) {
+                (self.on_drop)();
+            }
+        }
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    #[should_panic(expected = "already borrowed")]
+    async fn test_send_reentrant_drop_panics_refcell() {
+        run_on_localset(async {
+            let key_stream = KeyStream::<u64, ReentrantDrop>::new(1);
+            let sender = key_stream.sender();
+            let mut lagging_receiver = sender.subscribe(1).await;
+
+            let armed = Rc::new(Cell::new(false));
+            let streams = Rc::clone(&key_stream.streams);
+            let on_drop: Rc<dyn Fn()> = Rc::new(move || {
+                // Re-enter map mutation while send() still holds an immutable borrow.
+                let _guard = streams.borrow_mut();
+            });
+
+            assert_eq!(
+                sender
+                    .send(
+                        &1,
+                        ReentrantDrop {
+                            armed: Rc::clone(&armed),
+                            on_drop: Rc::clone(&on_drop),
+                        },
+                    )
+                    .await,
+                1
+            );
+
+            // Keep the first value unread so the next send evicts and drops it.
+            std::hint::black_box(&mut lagging_receiver);
+
+            armed.set(true);
+
+            let _ = sender
+                .send(
+                    &1,
+                    ReentrantDrop {
+                        armed: Rc::clone(&armed),
+                        on_drop: Rc::clone(&on_drop),
+                    },
+                )
+                .await;
         })
         .await;
     }
