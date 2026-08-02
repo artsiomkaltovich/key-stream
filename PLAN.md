@@ -100,7 +100,7 @@ Each phase is a **loop of N operations** reported as `phase / N`. `Instant::now(
 on macOS and would swamp a 2.4ns send if timestamped per operation; amortized over the loop it is
 noise. That is why phases are timed rather than operations.
 
-### The matrix: 4 modes × 5 distributions × 2 value types = 40 cells, plus calibration
+### The matrix: 4 modes × 5 distributions × 3 value types = 60 cells, plus calibration
 
 Run it in full — every mode, every distribution, both value types, every phase. Nothing is
 sampled or dropped to save time; the run-time budget below is met by retuning the harness, not by
@@ -135,29 +135,77 @@ Holding the product constant is what makes this readable: the three cells do ide
 so any spread between them is attributable to key distribution alone rather than to message
 volume. If the curve turns out nonlinear, re-run at 1 000 and 100 000 total to check scaling.
 
-**Two value types: `V = u64` and `V = String`.** `u64` alone is not a sufficient axis. It has
-`needs_drop() == false`, so the broadcast ring never drops a value on eviction and the whole
-destructor path — the one hazard A lives on — is invisible. It also has no allocation cost. A
-scratch measurement put a hot single-key send at ~32 ns for `u64` and ~50 ns for `String`, so the
-value type moves the number more than most of the matrix does. Doubling the cells is worth it.
+**Three value types: `V = u64`, `V = String`, and `V = DropValue`.** `u64` alone is not a
+sufficient axis. It has `needs_drop() == false`, so the broadcast ring never drops a value on
+eviction and the whole destructor path — the one hazard A lives on — is invisible. `String` adds
+allocator pressure. `DropValue` adds a lightweight real destructor with an observable side effect
+so eviction-drop behavior is measured without allocator noise.
 
 **Three `send` implementations in the `send_with_receivers` phase.** This is how the hazard-A fix
 gets chosen, and it is the reason that phase exists in this form:
 
-| Variant | What it does | Isolated cost of the handle |
-|---|---|---|
-| `guard_held` | today's code — the guard spans the broadcast. **Unsafe**, carried only as the baseline | — |
-| `clone_sender` | clone `broadcast::Sender` out, release guard, broadcast | 16.4 ns |
-| `rc_sender` | map holds `Rc`/`Arc<broadcast::Sender<V>>`; clone that instead | `Rc` 4.1 ns / `Arc` 9.6 ns |
+| Variant | What it does | Atomic RMWs per send | Isolated | **Measured in-context** |
+|---|---|---|---|---|
+| `guard_held` | historical baseline — the guard spans the broadcast. **Unsafe**, kept only via bench helper methods | 0 | — | 40.85 ns (baseline) |
+| `clone_sender` | clone `broadcast::Sender` out, release guard, broadcast | 4 | 16.4 ns | **+5.81 ns** |
+| `rc_sender` | map entry holds `Rc<broadcast::Sender<V>>`; clone that | 0 (non-atomic) | 4.1 ns | **+0.03 ns** |
+| `arc_sender` | map entry holds `Arc<broadcast::Sender<V>>`; clone that | 2 | 9.6 ns | **−0.23 ns** |
 
-Current branch status: shipping `KeySender::send` already uses the `clone_sender` path,
-and `guard_held` remains available only through bench-only helper methods as a comparison baseline.
+Cell `1x1/1key_10000msg/u64`, `min` over three independent runs; run-to-run spread was 0.05-0.5 ns,
+so these separations are real and not noise.
 
-Those are *isolated* latencies from a scratch bench. An in-context run put `clone_sender` at only
-~2 ns over `guard_held`, because the clone's atomics overlap the broadcast's own lock traffic.
-The whole point of measuring inside the phase harness is to find out which figure is real —
-a 2 ns fix is free, a 16 ns fix is ~30% of a hot send and worth the `Rc` wrapper's allocation
-per key.
+**Two findings that arithmetic would have got wrong.**
+
+*Releasing the guard is not a cost — it is a small win.* `arc_sender` does everything `guard_held`
+does **plus** an `Arc` clone and a guard release, yet is reproducibly ~0.23 ns faster (spread
+0.07 ns). The likely mechanism: while the `Ref` guard is live, `sender` is a reference *into* the
+`RefCell`'s contents, so the compiler cannot keep the `Sender` pointer in a register across
+`broadcast::Sender::send`. Cloning into an owned local frees it to do so, and that pays for the
+refcount bump. Whatever the exact cause, the direction is settled by measurement.
+
+*The `num_tx` increment is the entire cost.* `Sender::clone` is `Arc::clone` plus a `num_tx`
+bump — and the two handle variants that skip it are free, while the one that pays it costs 5.81 ns.
+The atomic count alone does not order the results (`arc_sender` has two RMWs and beats the
+zero-RMW `rc_sender` by 0.26 ns, which is at the edge of reproducibility and should be read as
+"indistinguishable"). What separates cleanly is one thing only: whether tokio's `Sender::clone` is
+called.
+
+**Consequence:** the safe options are free on both backends. `clone_sender` — which currently
+ships — is the only one that costs anything. Contention is still unmeasured; `16x1` and `4x4` on a
+real shared backend could still reorder this.
+
+Current branch status: shipping `KeySender::send` uses `clone_sender` — the most expensive of the
+correct options — and `guard_held` survives only as a bench helper.
+
+### Why `arc_sender` must be measured, not inferred
+
+`rc_sender`'s +0.3 ns says nothing about the `shared` backend. `Rc::clone` is a non-atomic
+increment; `Arc::clone` is two atomic RMWs. That is a category change, not a scaling factor, and it
+is the only thing separating `arc_sender` from `clone_sender`.
+
+`arc_sender` is measurable **on the local backend right now**, because the handle type stored in the
+map is orthogonal to the cell type guarding it — an `Arc<Sender<V>>` sits inside an
+`Rc<RefCell<HashMap<…>>>` perfectly well. Running all four variants in one pass, under one lookup
+and one rotation schedule, isolates handle-clone cost exactly. What it cannot show is contention;
+that needs the real `shared` backend on a multi-thread runtime.
+
+### Q4 is two questions, not one
+
+The two backends can legitimately pick different winners, and one option is not even available on
+both:
+
+- **`local`** — all four variants are candidates. Hazard A fails loudly here (`RefCell` panic), so
+  `guard_held` is at least arguable if the fix proves expensive.
+- **`shared`** — `guard_held` is **not shippable at any speed**: hazard A there is a silent
+  deadlock, not a panic. And holding a read guard across the broadcast blocks every writer, so
+  `subscribe` and reclamation stall behind it; the `16x1` and `4x4` modes exist to expose that and
+  have never been run against a shared backend. The real contest is `arc_sender` vs `clone_sender`.
+
+**Consequence for Phase 2.** If the winners differ, the map's value type differs per backend —
+`HashMap<K, Rc<Sender<V>>>` versus `HashMap<K, Sender<V>>` — so `Backend` must abstract over the
+*stored handle type* as well as the cell. The `core.rs` sketch below still hardcodes
+`Map<K, V> = HashMap<K, broadcast::Sender<V>>`; that has to become an associated type
+(`type Handle: Clone + Deref<Target = broadcast::Sender<V>>`) unless both backends converge.
 
 Two scratch results worth recording so they are not re-derived: `HashMap<i32, _>::get` is **flat
 at ~7.5 ns from 1 to 10 000 entries** (SipHash, not cache misses — the map stays resident), and
@@ -206,7 +254,7 @@ the precedent — the existing `test_shrink_dict` already caps at 10 yields.
 
 ### Run-time budget — it is the criterion config, not the send volume
 
-The full matrix is 4 modes × 5 distributions × 2 value types = **40 cells**, and it has to run four
+The full matrix is 4 modes × 5 distributions × 3 value types = **60 cells**, and it has to run four
 times over (two parents, two spikes). The matrix stays; the harness configuration is what gets cut.
 
 **Where the time actually goes.** [key_stream.rs:225-226](benches/key_stream.rs#L225-L226) sets
@@ -215,9 +263,9 @@ benchmark ID**. That is a 15 s floor per ID before any useful work happens:
 
 | | IDs | Floor per ID | Per branch | × 4 branches |
 |---|---|---|---|---|
-| Today's config, 3 distributions | 24 | 15 s | 6 min | 24 min |
-| Today's config, 5 distributions | 40 | 15 s | 10 min | **40 min** |
-| Retuned config, 5 distributions | 40 | 3.5 s | 2.3 min | **9 min** |
+| Today's config, 3 distributions | 36 | 15 s | 9 min | 36 min |
+| Today's config, 5 distributions | 60 | 15 s | 15 min | **60 min** |
+| Retuned config, 5 distributions | 60 | 3.5 s | 3.5 min | **14 min** |
 
 The 10 000-send workload is not the problem. At a few milliseconds per cycle it is a rounding error
 next to 3 s of warmup repeated 40 times. Three configuration changes recover the whole difference
@@ -238,7 +286,7 @@ instead of 20. `Auto` is supposed to switch to Flat for slow benchmarks, but it 
 estimates; setting it explicitly removes the guesswork and is correct for `iter_custom` with
 millisecond iterations. Potentially a further ~10× on the actual work, on top of the floor above.
 
-**4. `SAMPLE_PASSES` 50 → 15 in the phase harness.** It reports min/median/max, and min-of-N
+**4. `SAMPLE_PASSES` 50 → 15 in the phase harness.** It reports min/median/p95, and min-of-N
 converges quickly; 50 buys little over 15. This target is not the bottleneck — apply it last.
 
 Apply 1-3 before anything else: they are three lines of configuration and recover ~75% of the run.
@@ -256,11 +304,10 @@ Fixed, recorded in the output, not left to the machine:
 
 Record the core count too. `16x1` on a machine with fewer than 16 cores is a different experiment.
 
-Output: per-phase min/median/max as CSV, keeping the four value columns
-[parse_criterion.awk](bench-results/20260802-181501/parse_criterion.awk) emits so the existing
-comparison tooling works unchanged, with metadata **prefixed** as extra leading columns: branch,
-commit, backend, runtime mode, worker count, `W`, `P`. Metadata goes in the run, not a sidecar —
-four series across four branches is exactly the setup where one mislabeled CSV costs the whole run.
+Output: per-phase min/median/p95 as CSV with an explicit row kind column (`phase` / `failed`),
+plus metadata **prefixed** as leading columns: branch, commit, backend, runtime mode, worker
+count, `W`, `P`. This intentionally supersedes the old `parse_criterion.awk` schema rather than
+pretending backward compatibility.
 
 **One group, `full_cycle`**, over benchmark IDs `{mode}/{distribution}/{value}`
 (`full_cycle/1x1/1key_10000msg/u64`, `full_cycle/4x4/10000key_1msg/String`, …). Criterion reports
@@ -371,15 +418,27 @@ Five questions, answered from the same table:
    against `bench` vs `bench-sync-rwlock`. If the gap largely closes, the case for shipping two
    backends weakens and Phase 2 may collapse to one. Read `16x1` and `4x4` separately from `1x1`
    — those are the modes where `shared` can actually win, and no prior run has measured them.
-4. **Which hazard-A fix?** Compare `guard_held` / `clone_sender` / `rc_sender` within
-  `send_with_receivers`, at `V = String` specifically — the `u64` cells cannot answer it, since
-  with `needs_drop() == false` the eviction drop never happens and they measure the guard release
-  without the thing it protects against. Keep this decision benchmark-driven. `guard_held`
-  remains in the matrix as a valid measured option until the numbers decide whether to keep or
-  replace it. If it wins and ships, the hazard becomes a documented contract — `V::drop` must not
-  re-enter the stream — and [CHANGELOG.md](CHANGELOG.md) gets a known-limitation entry instead of
-  a fix entry. That is a defensible choice for `local`, where the failure is a loud panic; weigh it
-  harder for `shared`, where it is a silent hang.
+4. **Which hazard-A fix — asked separately per backend.** Compare all four variants within
+  `send_with_receivers`, at `V = String` and `V = DropValue` specifically. The `u64` cells cannot
+  answer it: with `needs_drop() == false` the eviction drop never happens, so they measure the
+  guard release without the thing it protects against.
+
+   **4a. `local`.** All four are candidates. `guard_held` stays in the matrix as a measured option
+   until the numbers decide. If it wins and ships, the hazard becomes a documented contract —
+   `V::drop` must not re-enter the stream — and [CHANGELOG.md](CHANGELOG.md) gets a
+   known-limitation entry instead of a fix entry. Defensible here, where the failure is a loud
+   `RefCell` panic.
+
+   **4b. `shared`.** `guard_held` is disqualified before any measurement: hazard A there is a
+   silent deadlock, and holding a read guard across the broadcast blocks every writer, stalling
+   `subscribe` and reclamation behind it. Read it as a reference number only. The decision is
+   `arc_sender` vs `clone_sender`, and it must be read from the contended modes (`16x1`, `4x4`) —
+   `1x1` cannot show the cost that disqualifies `guard_held`, and no prior run has measured any of
+   this on a shared backend.
+
+   Do not let 4a's answer stand in for 4b's. `rc_sender`'s near-zero cost comes from `Rc::clone`
+   being non-atomic; the shared equivalent is two atomic RMWs. If the winners differ, see the
+   `Backend` associated-type consequence noted in Phase 0.
 5. **How much of the gap is the backend, and how much is the runtime?** Read the
    `1x1-calibration` cell — `shared` on current-thread, contention removed. The spread between it
    and `local/1x1` is pure `Arc`-plus-lock overhead; the spread between it and `shared/1x1` on

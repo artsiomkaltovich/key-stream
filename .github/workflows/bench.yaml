@@ -1,7 +1,24 @@
 name: Benchmarks
 
+# Cross-architecture check. Local development happens on arm64 (Apple Silicon);
+# these runners are x86_64, where atomic costs differ enough to matter for the
+# send-variant comparison — x86 has a stronger memory model, so the AcqRel
+# traffic in `broadcast::Sender::clone` is relatively cheaper there than on ARM.
+#
+# READ THE NUMBERS WITH CARE. GitHub runners are shared VMs with noisy
+# neighbours; run-to-run spread here is far worse than on a quiet laptop.
+# Treat this as confirmation of large, directional effects (the ~14% penalty on
+# `clone_sender`) and NOT as a way to resolve sub-nanosecond differences such as
+# `rc_sender` vs `arc_sender`. Those need a quiet machine.
+
 on:
   workflow_dispatch:
+    inputs:
+      scope:
+        description: "full = whole matrix, subset = 1x1 modes only"
+        type: choice
+        options: [full, subset]
+        default: full
   push:
     branches: [master]
   pull_request:
@@ -10,6 +27,15 @@ on:
 jobs:
   bench:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # off = production shape, the numbers Phase 1's decision gate reads.
+        # on  = adds Rc/Arc handles for the send-variant comparison; inflates
+        #       `subscribe` and `drop` by ~16-18% per key, so it must not be
+        #       used for the phase numbers.
+        variants: [off, on]
+    name: bench (bench-variants=${{ matrix.variants }})
     steps:
       - uses: actions/checkout@v4
       - name: Set up Rust toolchain
@@ -24,33 +50,67 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
+
+      # Recorded alongside the results: a number without the machine it came
+      # from is not comparable to anything.
+      - name: Record machine
+        run: |
+          {
+            echo "runner_os=${{ runner.os }}"
+            echo "runner_arch=${{ runner.arch }}"
+            echo "nproc=$(nproc)"
+            lscpu || true
+          } | tee machine.txt
+
+      - name: Feature flags
+        id: flags
+        run: |
+          if [ "${{ matrix.variants }}" = "on" ]; then
+            echo "features=--features bench-variants" >> "$GITHUB_OUTPUT"
+          else
+            echo "features=" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Catches feature-gate rot: the cfg'd code must compile and pass in both
+      # configurations, not just the one someone last built locally.
+      - name: Tests
+        run: cargo test --locked ${{ steps.flags.outputs.features }}
+
+      - name: Clippy
+        run: cargo clippy --locked --all-targets ${{ steps.flags.outputs.features }} -- -D warnings
+
       - name: Run benchmarks
         env:
-          BENCH_MODE: ${{ github.event_name == 'pull_request' && 'quick' || github.event.inputs.mode || 'full' }}
+          # PRs run one mode rather than the whole matrix. Deliberately NOT
+          # criterion's `--quick`: that collapses the iteration count, which
+          # starves the side-channel phase accumulator and makes the breakdown
+          # meaningless. Narrowing the filter keeps full statistical settings.
+          SCOPE: ${{ github.event_name == 'pull_request' && 'subset' || github.event.inputs.scope || 'full' }}
         run: |
-          if [ "$BENCH_MODE" = "quick" ]; then
-            cargo bench --bench key_stream -- --quick | tee bench-output.txt
+          if [ "$SCOPE" = "subset" ]; then
+            FILTER='1x1/'
           else
-            cargo bench --bench key_stream --locked | tee bench-output.txt
+            FILTER=''
           fi
+          cargo bench --locked --bench key_stream ${{ steps.flags.outputs.features }} \
+            -- --noplot $FILTER | tee bench-output.txt
+
+      # The phase breakdown is emitted on stdout as CSV, not written by
+      # criterion, so it has to be pulled out of the log explicitly.
+      - name: Extract phase CSV
+        run: |
+          grep -E ',(phase|FAILED)/?' bench-output.txt > phases.csv || true
+          echo "rows: $(wc -l < phases.csv)"
+          test -s phases.csv || { echo "::error::no phase rows captured"; exit 1; }
+
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: key-stream-bench-${{ github.run_id }}
+          name: key-stream-bench-${{ matrix.variants }}-${{ github.run_id }}
           path: |
             target/criterion
             bench-output.txt
+            phases.csv
+            machine.txt
           if-no-files-found: error
           retention-days: 14
-
-  bench-artifact-check:
-    runs-on: ubuntu-latest
-    needs: bench
-    steps:
-      - name: Download benchmark artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: key-stream-bench-${{ github.run_id }}
-          path: bench-artifacts
-      - name: Show downloaded files
-        run: find bench-artifacts -type f | sort

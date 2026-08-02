@@ -1,5 +1,6 @@
 use futures::future::join_all;
 use key_stream::{KeyReceiver, KeySender, KeyStream, Value};
+use std::cell::Cell;
 use std::future::Future;
 use std::process::Command;
 use std::time::{Duration, Instant};
@@ -24,7 +25,10 @@ pub struct Distribution {
 pub enum SendWithReceiversVariant {
     GuardHeld,
     CloneSender,
+    #[cfg(feature = "bench-variants")]
     RcSender,
+    #[cfg(feature = "bench-variants")]
+    ArcSender,
 }
 
 #[derive(Clone)]
@@ -98,6 +102,10 @@ pub const CREATE_BATCH: usize = 10;
 pub const MAX_CLEANUP_YIELDS: usize = 10_000;
 pub const MAX_CLEANUP_WAIT: Duration = Duration::from_secs(1);
 
+thread_local! {
+    static DROPVALUE_DROPS: Cell<u64> = const { Cell::new(0) };
+}
+
 pub trait BenchValue: Value + Clone + 'static {
     fn from_index(index: u64) -> Self;
     fn label() -> &'static str;
@@ -129,6 +137,7 @@ pub struct DropValue(pub u64);
 impl Drop for DropValue {
     fn drop(&mut self) {
         std::hint::black_box(self.0);
+        DROPVALUE_DROPS.with(|count| count.set(count.get().wrapping_add(1)));
     }
 }
 
@@ -157,26 +166,57 @@ impl Distribution {
 }
 
 pub fn full_cycle_elements(mode: Mode, dist: Distribution) -> u64 {
-    let sends_with = (dist.total_sends() * 3) as u64;
+    let sends_with = (dist.total_sends() * send_variants().len()) as u64;
     let sends_none = dist.total_sends() as u64;
-    let recvs = (dist.recv_messages(mode) * 3) as u64;
+    let recvs = (dist.recv_messages(mode) * send_variants().len()) as u64;
     let subs_and_drops = (dist.receivers(mode) * 2) as u64;
     sends_with + sends_none + recvs + subs_and_drops
+}
+
+#[cfg(feature = "bench-variants")]
+const SEND_VARIANTS: [SendWithReceiversVariant; 4] = [
+    SendWithReceiversVariant::GuardHeld,
+    SendWithReceiversVariant::CloneSender,
+    SendWithReceiversVariant::RcSender,
+    SendWithReceiversVariant::ArcSender,
+];
+#[cfg(not(feature = "bench-variants"))]
+const SEND_VARIANTS: [SendWithReceiversVariant; 2] = [
+    SendWithReceiversVariant::GuardHeld,
+    SendWithReceiversVariant::CloneSender,
+];
+
+pub fn send_variants() -> &'static [SendWithReceiversVariant] {
+    &SEND_VARIANTS
 }
 
 pub fn send_variant_label(variant: SendWithReceiversVariant) -> &'static str {
     match variant {
         SendWithReceiversVariant::GuardHeld => "guard_held",
         SendWithReceiversVariant::CloneSender => "clone_sender",
+        #[cfg(feature = "bench-variants")]
         SendWithReceiversVariant::RcSender => "rc_sender",
+        #[cfg(feature = "bench-variants")]
+        SendWithReceiversVariant::ArcSender => "arc_sender",
     }
 }
 
-pub fn runtime() -> Runtime {
-    Builder::new_current_thread()
+pub struct BenchRuntime {
+    pub rt: Runtime,
+    pub mode: &'static str,
+    pub workers: usize,
+}
+
+pub fn runtime() -> BenchRuntime {
+    let rt = Builder::new_current_thread()
         .enable_all()
         .build()
-        .expect("failed to build tokio runtime")
+        .expect("failed to build tokio runtime");
+    BenchRuntime {
+        rt,
+        mode: "current_thread_interleaving",
+        workers: 1,
+    }
 }
 
 pub async fn run_on_localset<F, T>(fut: F) -> T
@@ -186,20 +226,16 @@ where
     LocalSet::new().run_until(fut).await
 }
 
-pub fn bench_metadata() -> BenchMetadata {
-    let backend = std::env::var("KEY_STREAM_BENCH_BACKEND").unwrap_or_else(|_| "local".to_string());
-    let runtime_mode = std::env::var("KEY_STREAM_BENCH_RUNTIME_MODE")
-        .unwrap_or_else(|_| "current_thread_interleaving".to_string());
-    let workers = std::env::var("KEY_STREAM_BENCH_WORKERS")
-        .ok()
-        .and_then(|raw| raw.parse::<usize>().ok())
-        .unwrap_or(1);
-
+pub fn bench_metadata(runtime_mode: &str, workers: usize) -> BenchMetadata {
+    let mut commit = git_value(["rev-parse", "--short", "HEAD"]);
+    if git_is_dirty() {
+        commit.push_str("-dirty");
+    }
     BenchMetadata {
         branch: git_value(["rev-parse", "--abbrev-ref", "HEAD"]),
-        commit: git_value(["rev-parse", "--short", "HEAD"]),
-        backend,
-        runtime_mode,
+        commit,
+        backend: key_stream::__BENCH_BACKEND.to_string(),
+        runtime_mode: runtime_mode.to_string(),
         workers,
         criterion_warmup_ms: CRITERION_WARMUP_MS,
         criterion_measurement_ms: CRITERION_MEASUREMENT_MS,
@@ -213,6 +249,14 @@ fn git_value<const N: usize>(args: [&str; N]) -> String {
     match output {
         Ok(out) if out.status.success() => String::from_utf8_lossy(&out.stdout).trim().to_owned(),
         _ => "unknown".to_string(),
+    }
+}
+
+fn git_is_dirty() -> bool {
+    let output = Command::new("git").args(["status", "--porcelain"]).output();
+    match output {
+        Ok(out) if out.status.success() => !out.stdout.is_empty(),
+        _ => false,
     }
 }
 
@@ -254,8 +298,13 @@ pub async fn send_messages_with_variant<V: BenchValue>(
                     SendWithReceiversVariant::CloneSender => {
                         sender.__bench_send_clone_sender(&key, value).await
                     }
+                    #[cfg(feature = "bench-variants")]
                     SendWithReceiversVariant::RcSender => {
                         sender.__bench_send_rc_sender_lookup(&key, value).await
+                    }
+                    #[cfg(feature = "bench-variants")]
+                    SendWithReceiversVariant::ArcSender => {
+                        sender.__bench_send_arc_sender(&key, value).await
                     }
                 };
                 std::hint::black_box(delivered);
@@ -319,17 +368,26 @@ pub fn per_op_ns(duration: Duration, count: usize) -> f64 {
     (duration.as_secs_f64() * 1_000_000_000.0) / denom
 }
 
-pub fn min_med_max(samples: &mut [f64]) -> (f64, f64, f64) {
+pub fn min_med_p95(samples: &mut [f64]) -> (f64, f64, f64) {
     samples.sort_by(|a, b| a.partial_cmp(b).expect("nan in sample"));
     let min = samples[0];
-    let max = samples[samples.len() - 1];
     let mid = samples.len() / 2;
     let med = if samples.len().is_multiple_of(2) {
         (samples[mid - 1] + samples[mid]) / 2.0
     } else {
         samples[mid]
     };
-    (min, med, max)
+    let p95_idx = (samples.len() - 1) * 95 / 100;
+    let p95 = samples[p95_idx];
+    (min, med, p95)
+}
+
+pub fn reset_dropvalue_drops() {
+    DROPVALUE_DROPS.with(|count| count.set(0));
+}
+
+pub fn dropvalue_drops() -> u64 {
+    DROPVALUE_DROPS.with(Cell::get)
 }
 
 pub fn csv_prefix(meta: &BenchMetadata) -> String {

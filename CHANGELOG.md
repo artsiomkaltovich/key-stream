@@ -15,8 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `async fn`.
 - **Breaking:** Renamed `KeyReceiver::to_async_stream` to
   `KeyReceiver::into_stream`.
-- Documented `KeyStream::new` panic conditions in a `# Panics` section
-  (outside Tokio runtime, or `broadcast_capacity == 0`).
+- **Breaking:** Key reclamation moved from a background cleanup task to
+  synchronous cleanup in `KeyReceiver::drop`. Keys are now removed
+  immediately when the last receiver drops; `KeyStream::new` no longer
+  spawns a task and no longer requires running inside a Tokio runtime or
+  `LocalSet`; and `KeyStream` no longer implements `Drop`.
+- Updated `KeyStream::new` panic docs: it now only panics when
+  `broadcast_capacity == 0`.
 - Replaced archived `actions-rs/toolchain` with
   `dtolnay/rust-toolchain@stable` in CI and publish workflows.
 
@@ -29,7 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   channel is closed, instead of yielding `Err(RecvError::Closed)` forever.
 - `KeySender::send` now releases the key map borrow before `broadcast::Sender::send`,
   preventing reentrant-drop borrow panics in local mode and lock reentry hazards
-  when value destructors touch the stream.
+  (including deadlock risk on lock-based backends) when value destructors touch the
+  stream.
 
 ## [0.10.0]
 

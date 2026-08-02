@@ -2,12 +2,11 @@
 //!
 //! Enables sending messages to multiple receivers, grouped by keys, with automatic cleanup of unused keys.
 //! No messages are sent until a key is subscribed to, and keys are automatically removed when all receivers are dropped.
-//! Cleanup is performed by a background task, so task switching is required for timely removal.
+//! Keys are reclaimed synchronously when the last receiver for a key is dropped.
 //! The memory usage of the keys map is optimized by shrinking it when many keys are removed.
 //!
 //! The main entry point is [`KeyStream`], created with [`KeyStream::new`].
-//! It manages the keys and contains a background task for cleaning up unused keys.
-//! The cleanup task is immediately notified when a key is dropped, rather than relying on periodic checks.
+//! It manages the keys and removes idle keys when receiver drops leave no subscribers.
 //! Use [`KeyStream::sender`] to obtain a sender handle for sending messages and subscribing to keys.
 //! Use [`KeySender::send`] to send messages to a key, and [`KeySender::subscribe`] to subscribe to a key and receive a [`KeyReceiver`] for that key.
 //! [`KeyReceiver::recv`] can be used to receive messages for a key, waiting asynchronously until a message is available.
@@ -18,17 +17,14 @@
 //! ```
 //! use key_stream::KeyStream;
 //! use tokio;
-//! use tokio::task::LocalSet;
 //!
 //! # #[tokio::main(flavor = "current_thread")]
 //! # async fn main() {
-//! LocalSet::new().run_until(async {
 //!     let key_stream = KeyStream::<i32, String>::new(10);
 //!     let sender = key_stream.sender();
 //!     let mut receiver = sender.subscribe(1).await;
 //!     sender.send(&1, "value".to_string()).await;
 //!     assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
-//! }).await;
 //! # }
 //! ```
 //!
@@ -36,31 +32,27 @@
 //!
 //! ```rust
 //! use key_stream::KeyStream;
-//! use tokio::task::LocalSet;
 //! # #[tokio::main(flavor = "current_thread")]
 //! # async fn main() {
-//! LocalSet::new().run_until(async {
 //!     let key_stream = KeyStream::<i32, String>::new(10);
 //!     let sender = key_stream.sender();
 //!     let receiver = sender.subscribe(1).await;
 //!     assert_eq!(key_stream.n_keys().await, 1);
 //!     drop(receiver);
-//!     // give the key drop task a chance to run
-//!     tokio::task::yield_now().await;
 //!     let result = sender.send(&1, "value".to_string()).await;
 //!     assert_eq!(result, 0);
 //!     assert_eq!(key_stream.n_keys().await, 0);
-//! }).await;
 //! # }
 //! ```
 use futures::Stream;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
+#[cfg(feature = "bench-variants")]
+use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::sync::broadcast::error::RecvError;
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 
 /// Trait bound for types usable as keys in [`KeyStream`].
 /// Must be hashable, comparable, cloneable, thread-safe, and `'static`.
@@ -73,7 +65,24 @@ pub trait Value: Clone + 'static {}
 impl<T: Clone + 'static> Value for T {}
 impl<T: std::hash::Hash + Eq + Clone + 'static> Key for T {}
 
-type Streams<K, V> = Rc<RefCell<HashMap<K, Rc<broadcast::Sender<V>>>>>;
+#[cfg(feature = "bench-variants")]
+struct BenchChannelHandles<V: Value> {
+    sender: broadcast::Sender<V>,
+    rc_sender: Rc<broadcast::Sender<V>>,
+    arc_sender: Arc<broadcast::Sender<V>>,
+}
+
+#[cfg(feature = "bench-variants")]
+type StreamEntry<V> = BenchChannelHandles<V>;
+#[cfg(not(feature = "bench-variants"))]
+type StreamEntry<V> = broadcast::Sender<V>;
+
+// Bench scaffolding: bench-variants keeps extra handle wrappers (Rc/Arc) for
+// send-variant comparison. Default build stores a plain Sender only.
+type Streams<K, V> = Rc<RefCell<HashMap<K, StreamEntry<V>>>>;
+
+#[doc(hidden)]
+pub const __BENCH_BACKEND: &str = "local";
 
 /// The main entry point for key-based async message streaming.
 ///
@@ -83,23 +92,18 @@ type Streams<K, V> = Rc<RefCell<HashMap<K, Rc<broadcast::Sender<V>>>>>;
 /// ```
 /// use key_stream::KeyStream;
 /// use tokio;
-/// use tokio::task::LocalSet;
 /// # #[tokio::main(flavor = "current_thread")]
 /// # async fn main() {
-/// LocalSet::new().run_until(async {
 ///     let key_stream = KeyStream::<i32, String>::new(10);
 ///     let sender = key_stream.sender();
 ///     let mut receiver = sender.subscribe(1).await;
 ///     sender.send(&1, "value".to_string()).await;
 ///     assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
-/// }).await;
 /// # }
 /// ```
 pub struct KeyStream<K: Key, V: Value> {
     broadcast_capacity: usize,
     streams: Streams<K, V>,
-    sender: UnboundedSender<K>,
-    drop_keys_task: Option<tokio::task::JoinHandle<()>>,
 }
 
 /// Handle for sending and subscribing to messages by key.
@@ -108,7 +112,6 @@ pub struct KeyStream<K: Key, V: Value> {
 pub struct KeySender<K: Key, V: Value> {
     streams: Streams<K, V>,
     broadcast_capacity: usize,
-    drop_notify: UnboundedSender<K>,
 }
 
 /// A receiver for messages for a specific key.
@@ -116,8 +119,8 @@ pub struct KeySender<K: Key, V: Value> {
 /// Created via [`KeySender::subscribe`].
 pub struct KeyReceiver<K: Key, V: Value> {
     key: K,
-    receiver: broadcast::Receiver<V>,
-    on_drop: UnboundedSender<K>,
+    streams: Weak<RefCell<HashMap<K, StreamEntry<V>>>>,
+    receiver: Option<broadcast::Receiver<V>>,
 }
 
 impl<K: Key, V: Value> KeyStream<K, V> {
@@ -125,31 +128,19 @@ impl<K: Key, V: Value> KeyStream<K, V> {
     ///
     /// # Panics
     ///
-    /// Panics if called outside of a Tokio [`task::LocalSet`] or
-    /// [`runtime::LocalRuntime`], because it spawns a background cleanup task
-    /// with [`tokio::task::spawn_local`].
-    ///
     /// Panics if `broadcast_capacity == 0`, because
     /// [`tokio::sync::broadcast::channel`] requires a positive capacity.
     pub fn new(broadcast_capacity: usize) -> Self {
-        let (sender, receiver) = unbounded_channel::<K>();
-        let streams = Rc::new(RefCell::new(HashMap::<K, Rc<broadcast::Sender<V>>>::new()));
-        let on_drop_task = tokio::task::spawn_local(cleanup_keys(receiver, Rc::clone(&streams)));
+        let streams = Rc::new(RefCell::new(HashMap::<K, StreamEntry<V>>::new()));
         Self {
             broadcast_capacity,
             streams,
-            sender,
-            drop_keys_task: Some(on_drop_task),
         }
     }
 
     /// Get a sender handle for publishing and subscribing to keys.
     pub fn sender(&self) -> KeySender<K, V> {
-        KeySender::new(
-            Rc::clone(&self.streams),
-            self.broadcast_capacity,
-            self.sender.clone(),
-        )
+        KeySender::new(Rc::clone(&self.streams), self.broadcast_capacity)
     }
 
     /// Get the number of keys currently tracked.
@@ -164,11 +155,10 @@ impl<K: Key, V: Value> KeyStream<K, V> {
 }
 
 impl<K: Key, V: Value> KeySender<K, V> {
-    fn new(streams: Streams<K, V>, broadcast_capacity: usize, sender: UnboundedSender<K>) -> Self {
+    fn new(streams: Streams<K, V>, broadcast_capacity: usize) -> Self {
         Self {
             streams,
             broadcast_capacity,
-            drop_notify: sender,
         }
     }
 
@@ -182,14 +172,14 @@ impl<K: Key, V: Value> KeySender<K, V> {
     #[doc(hidden)]
     pub fn __bench_sender_clone_for_key(&self, key: &K) -> Option<Rc<broadcast::Sender<V>>> {
         let streams = self.streams.borrow();
-        streams.get(key).cloned()
+        streams.get(key).map(entry_rc_sender_clone)
     }
 
     #[doc(hidden)]
     pub async fn __bench_send_guard_held(&self, key: &K, value: V) -> usize {
         let streams = self.streams.borrow();
-        if let Some(sender) = streams.get(key) {
-            sender.send(value).unwrap_or(0)
+        if let Some(entry) = streams.get(key) {
+            entry_sender_ref(entry).send(value).unwrap_or(0)
         } else {
             0
         }
@@ -199,7 +189,7 @@ impl<K: Key, V: Value> KeySender<K, V> {
     pub async fn __bench_send_clone_sender(&self, key: &K, value: V) -> usize {
         let sender = {
             let streams = self.streams.borrow();
-            streams.get(key).map(|sender| sender.as_ref().clone())
+            streams.get(key).map(entry_sender_clone)
         };
         if let Some(sender) = sender {
             sender.send(value).unwrap_or(0)
@@ -208,11 +198,25 @@ impl<K: Key, V: Value> KeySender<K, V> {
         }
     }
 
+    #[cfg(feature = "bench-variants")]
     #[doc(hidden)]
     pub async fn __bench_send_rc_sender_lookup(&self, key: &K, value: V) -> usize {
         let sender = {
             let streams = self.streams.borrow();
-            streams.get(key).cloned()
+            streams.get(key).map(|entry| Rc::clone(&entry.rc_sender))
+        };
+        let Some(sender) = sender else {
+            return 0;
+        };
+        sender.send(value).unwrap_or(0)
+    }
+
+    #[cfg(feature = "bench-variants")]
+    #[doc(hidden)]
+    pub async fn __bench_send_arc_sender(&self, key: &K, value: V) -> usize {
+        let sender = {
+            let streams = self.streams.borrow();
+            streams.get(key).map(|entry| Arc::clone(&entry.arc_sender))
         };
         let Some(sender) = sender else {
             return 0;
@@ -225,16 +229,16 @@ impl<K: Key, V: Value> KeySender<K, V> {
     /// Returns a [`KeyReceiver`] for receiving messages.
     pub async fn subscribe(&self, key: K) -> KeyReceiver<K, V> {
         let streams = self.streams.borrow();
-        let inner = if let Some(sender) = streams.get(&key) {
-            sender.subscribe()
+        let inner = if let Some(entry) = streams.get(&key) {
+            entry_subscribe(entry)
         } else {
             drop(streams);
             let mut streams = self.streams.borrow_mut();
-            let sender = streams.entry(key.clone()).or_insert_with(|| {
+            let entry = streams.entry(key.clone()).or_insert_with(|| {
                 let (sender, _) = broadcast::channel(self.broadcast_capacity);
-                Rc::new(sender)
+                make_entry(sender)
             });
-            sender.subscribe()
+            entry_subscribe(entry)
         };
         self.create_receiver(key, inner)
     }
@@ -252,8 +256,8 @@ impl<K: Key, V: Value> KeySender<K, V> {
     fn create_receiver(&self, key: K, inner: broadcast::Receiver<V>) -> KeyReceiver<K, V> {
         KeyReceiver {
             key,
-            receiver: inner,
-            on_drop: self.drop_notify.clone(),
+            streams: Rc::downgrade(&self.streams),
+            receiver: Some(inner),
         }
     }
 }
@@ -262,20 +266,27 @@ impl<K: Key, V: Value> KeyReceiver<K, V> {
     /// Receive the next message for this key, waiting asynchronously.
     /// See, tokio::sync::broadcast::Receiver::recv for more details.
     pub async fn recv(&mut self) -> Result<V, broadcast::error::RecvError> {
-        self.receiver.recv().await
+        self.receiver
+            .as_mut()
+            .expect("receiver missing")
+            .recv()
+            .await
     }
 
     /// Try to receive the next message for this key without waiting.
     /// See, tokio::sync::broadcast::Receiver::try_recv for more details.
     pub fn try_recv(&mut self) -> Result<V, broadcast::error::TryRecvError> {
-        self.receiver.try_recv()
+        self.receiver.as_mut().expect("receiver missing").try_recv()
     }
 
     /// Receive the next message for this key, blocking the current thread.
     /// Only use in synchronous contexts.
     /// See, tokio::sync::broadcast::Receiver::blocking_recv for more details.
     pub fn blocking_recv(&mut self) -> Result<V, broadcast::error::RecvError> {
-        self.receiver.blocking_recv()
+        self.receiver
+            .as_mut()
+            .expect("receiver missing")
+            .blocking_recv()
     }
 
     /// Consume this receiver and convert it into a stream of messages for this key.
@@ -298,41 +309,79 @@ impl<K: Key, V: Value> Clone for KeySender<K, V> {
         Self {
             streams: Rc::clone(&self.streams),
             broadcast_capacity: self.broadcast_capacity,
-            drop_notify: self.drop_notify.clone(),
-        }
-    }
-}
-
-impl<K: Key, V: Value> Drop for KeyStream<K, V> {
-    fn drop(&mut self) {
-        if let Some(task) = self.drop_keys_task.take() {
-            task.abort();
         }
     }
 }
 
 impl<K: Key, V: Value> Drop for KeyReceiver<K, V> {
     fn drop(&mut self) {
-        let _ = self.on_drop.send(self.key.clone());
-    }
-}
+        // Drop the receiver before borrowing the map: receiver drop may drain buffered
+        // slots and run value destructors, which may re-enter the stream.
+        let Some(receiver) = self.receiver.take() else {
+            return;
+        };
+        drop(receiver);
 
-async fn cleanup_keys<K: Key, V: Value>(
-    mut receiver: UnboundedReceiver<K>,
-    streams: Streams<K, V>,
-) {
-    while let Some(key) = receiver.recv().await {
-        let mut streams = streams.borrow_mut();
-        if let Some(sender) = streams.get(&key)
-            && sender.receiver_count() == 0
+        let Some(streams_ref) = self.streams.upgrade() else {
+            return;
+        };
+        let mut streams = streams_ref.borrow_mut();
+        if let Some(entry) = streams.get(&self.key)
+            && entry_receiver_count(entry) == 0
         {
-            streams.remove(&key);
+            streams.remove(&self.key);
             optimize_dict_mem(&mut streams);
         }
     }
 }
 
-fn optimize_dict_mem<K: Key, V: Value>(streams: &mut HashMap<K, Rc<broadcast::Sender<V>>>) {
+#[cfg(feature = "bench-variants")]
+fn make_entry<V: Value>(sender: broadcast::Sender<V>) -> StreamEntry<V> {
+    BenchChannelHandles {
+        sender: sender.clone(),
+        rc_sender: Rc::new(sender.clone()),
+        arc_sender: Arc::new(sender),
+    }
+}
+
+#[cfg(not(feature = "bench-variants"))]
+fn make_entry<V: Value>(sender: broadcast::Sender<V>) -> StreamEntry<V> {
+    sender
+}
+
+#[cfg(feature = "bench-variants")]
+fn entry_sender_ref<V: Value>(entry: &StreamEntry<V>) -> &broadcast::Sender<V> {
+    &entry.sender
+}
+
+#[cfg(not(feature = "bench-variants"))]
+fn entry_sender_ref<V: Value>(entry: &StreamEntry<V>) -> &broadcast::Sender<V> {
+    entry
+}
+
+fn entry_sender_clone<V: Value>(entry: &StreamEntry<V>) -> broadcast::Sender<V> {
+    entry_sender_ref(entry).clone()
+}
+
+#[cfg(feature = "bench-variants")]
+fn entry_rc_sender_clone<V: Value>(entry: &StreamEntry<V>) -> Rc<broadcast::Sender<V>> {
+    Rc::clone(&entry.rc_sender)
+}
+
+#[cfg(not(feature = "bench-variants"))]
+fn entry_rc_sender_clone<V: Value>(entry: &StreamEntry<V>) -> Rc<broadcast::Sender<V>> {
+    Rc::new(entry.clone())
+}
+
+fn entry_subscribe<V: Value>(entry: &StreamEntry<V>) -> broadcast::Receiver<V> {
+    entry_sender_ref(entry).subscribe()
+}
+
+fn entry_receiver_count<V: Value>(entry: &StreamEntry<V>) -> usize {
+    entry_sender_ref(entry).receiver_count()
+}
+
+fn optimize_dict_mem<K: Key, V: Value>(streams: &mut HashMap<K, StreamEntry<V>>) {
     // If the number of keys is less than half the capacity and the capacity is big enough,
     // shrink the capacity to save memory
     let cap = streams.capacity() >> 1;
@@ -345,463 +394,362 @@ fn optimize_dict_mem<K: Key, V: Value>(streams: &mut HashMap<K, Rc<broadcast::Se
 #[cfg(test)]
 mod tests {
     use std::cell::Cell;
-    use std::future::Future;
     use std::pin::Pin;
     use std::rc::Rc;
-    use tokio::task::LocalSet;
     use tokio::time::{Duration, timeout};
 
     use super::*;
 
-    async fn run_on_localset<F>(fut: F)
-    where
-        F: Future<Output = ()>,
-    {
-        LocalSet::new().run_until(fut).await;
-    }
-
     #[tokio::test(flavor = "current_thread")]
     async fn test_recv() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let mut receiver = sender.subscribe("1".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 1);
-            sender.send(&"1".to_string(), "value".to_string()).await;
-            assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
-        })
-        .await;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let mut receiver = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
+        sender.send(&"1".to_string(), "value".to_string()).await;
+        assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_no_receiver() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let result = sender.send(&"1".to_string(), "value".to_string()).await;
-            assert_eq!(result, 0);
-            assert_eq!(key_stream.n_keys().await, 0);
-        })
-        .await;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let result = sender.send(&"1".to_string(), "value".to_string()).await;
+        assert_eq!(result, 0);
+        assert_eq!(key_stream.n_keys().await, 0);
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_send_after_drop() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let receiver = sender.subscribe("1".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 1);
-            drop(receiver);
-            // give the on_drop task a chance to run
-            tokio::task::yield_now().await;
-            let result = sender.send(&"1".to_string(), "value".to_string()).await;
-            assert_eq!(result, 0);
-            assert_eq!(key_stream.n_keys().await, 0);
-        })
-        .await;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let receiver = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
+        drop(receiver);
+        let result = sender.send(&"1".to_string(), "value".to_string()).await;
+        assert_eq!(result, 0);
+        assert_eq!(key_stream.n_keys().await, 0);
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn test_send_after_drop_before_cleanup_runs() {
-        run_on_localset(async {
-            // The key is still in the map (the cleanup task has not run yet — no
-            // yield between drop and send), but all receivers are gone. send()
-            // must report 0 receivers, not a SendError.
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let receiver = sender.subscribe("1".to_string()).await;
-            drop(receiver);
-            let result = sender.send(&"1".to_string(), "value".to_string()).await;
-            assert_eq!(result, 0);
-            assert_eq!(key_stream.n_keys().await, 1);
-        })
-        .await;
+    async fn test_send_after_drop_reclaims_key_immediately() {
+        // All receivers are gone, so send() must report 0 receivers and the key
+        // must be reclaimed synchronously.
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let receiver = sender.subscribe("1".to_string()).await;
+        drop(receiver);
+        let result = sender.send(&"1".to_string(), "value".to_string()).await;
+        assert_eq!(result, 0);
+        assert_eq!(key_stream.n_keys().await, 0);
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_lagged() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<String, String>::new(1);
-            let sender = key_stream.sender();
-            let mut receiver = sender.subscribe("1".to_string()).await;
-            let result = sender.send(&"1".to_string(), "value1".to_string()).await;
-            assert_eq!(result, 1);
-            let result = sender.send(&"1".to_string(), "value2".to_string()).await;
-            assert_eq!(result, 1);
-            assert_eq!(
-                receiver.recv().await,
-                Err(broadcast::error::RecvError::Lagged(1))
-            );
-            assert_eq!(receiver.recv().await.unwrap(), "value2".to_string());
-        })
-        .await;
+        let key_stream = KeyStream::<String, String>::new(1);
+        let sender = key_stream.sender();
+        let mut receiver = sender.subscribe("1".to_string()).await;
+        let result = sender.send(&"1".to_string(), "value1".to_string()).await;
+        assert_eq!(result, 1);
+        let result = sender.send(&"1".to_string(), "value2".to_string()).await;
+        assert_eq!(result, 1);
+        assert_eq!(
+            receiver.recv().await,
+            Err(broadcast::error::RecvError::Lagged(1))
+        );
+        assert_eq!(receiver.recv().await.unwrap(), "value2".to_string());
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_recv_struct() {
-        run_on_localset(async {
-            #[derive(Clone, Debug)]
-            struct MyStruct {
-                field1: String,
-                field2: i32,
-            }
-            let key_stream = KeyStream::<String, MyStruct>::new(10);
-            let sender = key_stream.sender();
-            let mut receiver = sender.subscribe("1".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 1);
-            sender
-                .send(
-                    &"1".to_string(),
-                    MyStruct {
-                        field1: "value".to_string(),
-                        field2: 42,
-                    },
-                )
-                .await;
-            let received = receiver.recv().await.unwrap();
-            assert_eq!(received.field1, "value".to_string());
-            assert_eq!(received.field2, 42);
-        })
-        .await;
+        #[derive(Clone, Debug)]
+        struct MyStruct {
+            field1: String,
+            field2: i32,
+        }
+        let key_stream = KeyStream::<String, MyStruct>::new(10);
+        let sender = key_stream.sender();
+        let mut receiver = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
+        sender
+            .send(
+                &"1".to_string(),
+                MyStruct {
+                    field1: "value".to_string(),
+                    field2: 42,
+                },
+            )
+            .await;
+        let received = receiver.recv().await.unwrap();
+        assert_eq!(received.field1, "value".to_string());
+        assert_eq!(received.field2, 42);
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_recv_rc_struct() {
-        run_on_localset(async {
-            #[derive(Debug)]
-            struct MyStruct {
-                field1: String,
-                field2: i32,
-            }
-            let key_stream = KeyStream::<String, Rc<MyStruct>>::new(10);
-            let sender = key_stream.sender();
-            let mut receiver = sender.subscribe("1".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 1);
-            sender
-                .send(
-                    &"1".to_string(),
-                    Rc::new(MyStruct {
-                        field1: "value".to_string(),
-                        field2: 42,
-                    }),
-                )
-                .await;
-            let received = receiver.recv().await.unwrap();
+        #[derive(Debug)]
+        struct MyStruct {
+            field1: String,
+            field2: i32,
+        }
+        let key_stream = KeyStream::<String, Rc<MyStruct>>::new(10);
+        let sender = key_stream.sender();
+        let mut receiver = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
+        sender
+            .send(
+                &"1".to_string(),
+                Rc::new(MyStruct {
+                    field1: "value".to_string(),
+                    field2: 42,
+                }),
+            )
+            .await;
+        let received = receiver.recv().await.unwrap();
 
-            assert_eq!(received.field1, "value".to_string());
-            assert_eq!(received.field2, 42);
-        })
-        .await;
+        assert_eq!(received.field1, "value".to_string());
+        assert_eq!(received.field2, 42);
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_messages_broadcasted() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let mut receiver1 = sender.subscribe("1".to_string()).await;
-            let mut receiver2 = sender.subscribe("1".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 1);
-            sender.send(&"1".to_string(), "value".to_string()).await;
-            assert_eq!(receiver1.recv().await.unwrap(), "value".to_string());
-            assert_eq!(receiver2.recv().await.unwrap(), "value".to_string());
-        })
-        .await;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let mut receiver1 = sender.subscribe("1".to_string()).await;
+        let mut receiver2 = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
+        sender.send(&"1".to_string(), "value".to_string()).await;
+        assert_eq!(receiver1.recv().await.unwrap(), "value".to_string());
+        assert_eq!(receiver2.recv().await.unwrap(), "value".to_string());
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_key_filter() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let mut receiver1 = sender.subscribe("1".to_string()).await;
-            let mut receiver2 = sender.subscribe("2".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 2);
-            sender.send(&"1".to_string(), "value1".to_string()).await;
-            sender.send(&"2".to_string(), "value2".to_string()).await;
-            assert_eq!(receiver1.recv().await.unwrap(), "value1".to_string());
-            assert_eq!(receiver2.recv().await.unwrap(), "value2".to_string());
-            assert_eq!(
-                receiver1.try_recv(),
-                Err(broadcast::error::TryRecvError::Empty)
-            );
-            assert_eq!(
-                receiver2.try_recv(),
-                Err(broadcast::error::TryRecvError::Empty)
-            );
-        })
-        .await;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let mut receiver1 = sender.subscribe("1".to_string()).await;
+        let mut receiver2 = sender.subscribe("2".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 2);
+        sender.send(&"1".to_string(), "value1".to_string()).await;
+        sender.send(&"2".to_string(), "value2".to_string()).await;
+        assert_eq!(receiver1.recv().await.unwrap(), "value1".to_string());
+        assert_eq!(receiver2.recv().await.unwrap(), "value2".to_string());
+        assert_eq!(
+            receiver1.try_recv(),
+            Err(broadcast::error::TryRecvError::Empty)
+        );
+        assert_eq!(
+            receiver2.try_recv(),
+            Err(broadcast::error::TryRecvError::Empty)
+        );
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_key_drop() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let receiver = sender.subscribe("1".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 1);
-            sender.send(&"1".to_string(), "value".to_string()).await;
-            drop(receiver);
-            // give the on_drop task a chance to run
-            tokio::task::yield_now().await;
-            assert_eq!(key_stream.n_keys().await, 0);
-        })
-        .await;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let receiver = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
+        sender.send(&"1".to_string(), "value".to_string()).await;
+        drop(receiver);
+        assert_eq!(key_stream.n_keys().await, 0);
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_key_non_dropped_if_other_receiver_exists() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let receiver1 = sender.subscribe("1".to_string()).await;
-            let _receiver2 = sender.subscribe("1".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 1);
-            sender.send(&"1".to_string(), "value".to_string()).await;
-            drop(receiver1);
-            // give the on_drop task a chance to run
-            tokio::task::yield_now().await;
-            assert_eq!(key_stream.n_keys().await, 1);
-        })
-        .await;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let receiver1 = sender.subscribe("1".to_string()).await;
+        let _receiver2 = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
+        sender.send(&"1".to_string(), "value".to_string()).await;
+        drop(receiver1);
+        assert_eq!(key_stream.n_keys().await, 1);
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_two_clients() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender1 = key_stream.sender();
-            let sender2 = key_stream.sender();
-            let mut receiver1 = sender1.subscribe("1".to_string()).await;
-            let mut receiver2 = sender2.subscribe("1".to_string()).await;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender1 = key_stream.sender();
+        let sender2 = key_stream.sender();
+        let mut receiver1 = sender1.subscribe("1".to_string()).await;
+        let mut receiver2 = sender2.subscribe("1".to_string()).await;
 
-            assert_eq!(key_stream.n_keys().await, 1);
+        assert_eq!(key_stream.n_keys().await, 1);
 
-            sender1.send(&"1".to_string(), "value".to_string()).await;
+        sender1.send(&"1".to_string(), "value".to_string()).await;
 
-            assert_eq!(receiver1.recv().await.unwrap(), "value".to_string());
-            assert_eq!(receiver2.recv().await.unwrap(), "value".to_string());
-            assert_eq!(
-                receiver1.try_recv(),
-                Err(broadcast::error::TryRecvError::Empty)
-            );
-            assert_eq!(
-                receiver2.try_recv(),
-                Err(broadcast::error::TryRecvError::Empty)
-            );
+        assert_eq!(receiver1.recv().await.unwrap(), "value".to_string());
+        assert_eq!(receiver2.recv().await.unwrap(), "value".to_string());
+        assert_eq!(
+            receiver1.try_recv(),
+            Err(broadcast::error::TryRecvError::Empty)
+        );
+        assert_eq!(
+            receiver2.try_recv(),
+            Err(broadcast::error::TryRecvError::Empty)
+        );
 
-            drop(sender2);
-            // give the on_drop task a chance to run
-            tokio::task::yield_now().await;
+        drop(sender2);
 
-            assert_eq!(key_stream.n_keys().await, 1);
+        assert_eq!(key_stream.n_keys().await, 1);
 
-            sender1.send(&"1".to_string(), "value".to_string()).await;
+        sender1.send(&"1".to_string(), "value".to_string()).await;
 
-            assert_eq!(receiver1.recv().await.unwrap(), "value".to_string());
-        })
-        .await;
+        assert_eq!(receiver1.recv().await.unwrap(), "value".to_string());
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_reconnect() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let mut receiver1 = sender.subscribe("1".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 1);
-            sender.send(&"1".to_string(), "value".to_string()).await;
-            assert_eq!(receiver1.recv().await.unwrap(), "value".to_string());
-            drop(receiver1);
-            // give the on_drop task a chance to run
-            tokio::task::yield_now().await;
-            assert_eq!(key_stream.n_keys().await, 0);
-            let mut receiver2 = sender.subscribe("1".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 1);
-            sender.send(&"1".to_string(), "value2".to_string()).await;
-            assert_eq!(receiver2.recv().await.unwrap(), "value2".to_string());
-        })
-        .await;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let mut receiver1 = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
+        sender.send(&"1".to_string(), "value".to_string()).await;
+        assert_eq!(receiver1.recv().await.unwrap(), "value".to_string());
+        drop(receiver1);
+        assert_eq!(key_stream.n_keys().await, 0);
+        let mut receiver2 = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
+        sender.send(&"1".to_string(), "value2".to_string()).await;
+        assert_eq!(receiver2.recv().await.unwrap(), "value2".to_string());
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn test_resubscribe_before_cleanup_runs() {
-        run_on_localset(async {
-            // Interleaved drop/resubscribe on the same key: dropping receiver1 queues a
-            // cleanup notification, but we resubscribe *before* the cleanup task runs.
-            // The stale notification must NOT remove the key, because receiver2 is live.
-            // This exercises the `receiver_count() == 0` re-check under the write lock.
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let receiver1 = sender.subscribe("1".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 1);
+    async fn test_resubscribe_after_drop_recreates_key() {
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let receiver1 = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
 
-            // Drop receiver1 (queues a cleanup notification for key "1") and immediately
-            // resubscribe without yielding, so the cleanup task has not processed the
-            // notification yet when the key is re-registered.
-            drop(receiver1);
-            let mut receiver2 = sender.subscribe("1".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 1);
+        drop(receiver1);
+        assert_eq!(key_stream.n_keys().await, 0);
 
-            // Now let the cleanup task process the stale notification. It must see
-            // receiver2 still alive (receiver_count() == 1) and keep the key.
-            tokio::task::yield_now().await;
-            assert_eq!(key_stream.n_keys().await, 1);
+        let mut receiver2 = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
 
-            // The key must still deliver messages to the live receiver.
-            let result = sender.send(&"1".to_string(), "value".to_string()).await;
-            assert_eq!(result, 1);
-            assert_eq!(receiver2.recv().await.unwrap(), "value".to_string());
-        })
-        .await;
+        let result = sender.send(&"1".to_string(), "value".to_string()).await;
+        assert_eq!(result, 1);
+        assert_eq!(receiver2.recv().await.unwrap(), "value".to_string());
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_shrink_dict() {
-        run_on_localset(async {
-            use futures::future::join_all;
+        use futures::future::join_all;
 
-            let key_stream = KeyStream::<i32, String>::new(1);
-            let sender = key_stream.sender();
-            let tasks = (0..500).map(|i| {
-                let sender = sender.clone();
-                async move { sender.subscribe(i).await }
-            });
-            // keep the receivers alive; dropping them is what triggers cleanup
-            let mut subs = join_all(tasks).await;
-            assert_eq!(key_stream.n_keys().await, 500);
-            subs.drain(0..400);
-            // give the on_drop task a chance to process all 400 notifications
-            // (it may be preempted mid-way by tokio's cooperative budget)
-            for _ in 0..10 {
-                if key_stream.n_keys().await == 100 {
-                    break;
-                }
-                tokio::task::yield_now().await;
-            }
-            assert_eq!(key_stream.n_keys().await, 100);
-            assert!(key_stream.key_capacity().await < 500);
-        })
-        .await;
+        let key_stream = KeyStream::<i32, String>::new(1);
+        let sender = key_stream.sender();
+        let tasks = (0..500).map(|i| {
+            let sender = sender.clone();
+            async move { sender.subscribe(i).await }
+        });
+        // keep the receivers alive; dropping them is what triggers cleanup
+        let mut subs = join_all(tasks).await;
+        assert_eq!(key_stream.n_keys().await, 500);
+        subs.drain(0..400);
+        assert_eq!(key_stream.n_keys().await, 100);
+        assert!(key_stream.key_capacity().await < 500);
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_drop_sender() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let mut receiver = sender.subscribe("1".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 1);
-            sender.send(&"1".to_string(), "value".to_string()).await;
-            drop(sender);
-            tokio::task::yield_now().await;
-            assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
-            assert_eq!(
-                receiver.try_recv(),
-                Err(broadcast::error::TryRecvError::Empty)
-            );
-        })
-        .await;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let mut receiver = sender.subscribe("1".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 1);
+        sender.send(&"1".to_string(), "value".to_string()).await;
+        drop(sender);
+        assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
+        assert_eq!(
+            receiver.try_recv(),
+            Err(broadcast::error::TryRecvError::Empty)
+        );
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_drop_stream() {
-        run_on_localset(async {
-            // This test ensures that dropping the KeyStream doesn't cause any panics
-            // actual data may vary
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            drop(key_stream);
-            let mut receiver = sender.subscribe("1".to_string()).await;
-            sender.send(&"1".to_string(), "value".to_string()).await;
-            tokio::task::yield_now().await;
-            assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
-            assert_eq!(
-                receiver.try_recv(),
-                Err(broadcast::error::TryRecvError::Empty)
-            );
-        })
-        .await;
+        // This test ensures that dropping the KeyStream doesn't cause any panics
+        // actual data may vary
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        drop(key_stream);
+        let mut receiver = sender.subscribe("1".to_string()).await;
+        sender.send(&"1".to_string(), "value".to_string()).await;
+        assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
+        assert_eq!(
+            receiver.try_recv(),
+            Err(broadcast::error::TryRecvError::Empty)
+        );
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_len_and_capacity() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender1 = key_stream.sender();
-            let sender2 = key_stream.sender();
-            assert_eq!(key_stream.n_keys().await, 0);
-            assert_eq!(sender1.n_keys().await, 0);
-            assert_eq!(sender2.n_keys().await, 0);
-            assert_eq!(
-                key_stream.key_capacity().await,
-                sender1.key_capacity().await
-            );
-            assert_eq!(
-                key_stream.key_capacity().await,
-                sender2.key_capacity().await
-            );
-            let _receiver1 = sender1.subscribe("1".to_string()).await;
-            let _receiver2 = sender2.subscribe("2".to_string()).await;
-            let _receiver3 = sender2.subscribe("3".to_string()).await;
-            assert_eq!(key_stream.n_keys().await, 3);
-            assert_eq!(sender1.n_keys().await, 3);
-            assert_eq!(sender2.n_keys().await, 3);
-            assert_eq!(
-                key_stream.key_capacity().await,
-                sender1.key_capacity().await
-            );
-            assert_eq!(
-                key_stream.key_capacity().await,
-                sender2.key_capacity().await
-            );
-        })
-        .await;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender1 = key_stream.sender();
+        let sender2 = key_stream.sender();
+        assert_eq!(key_stream.n_keys().await, 0);
+        assert_eq!(sender1.n_keys().await, 0);
+        assert_eq!(sender2.n_keys().await, 0);
+        assert_eq!(
+            key_stream.key_capacity().await,
+            sender1.key_capacity().await
+        );
+        assert_eq!(
+            key_stream.key_capacity().await,
+            sender2.key_capacity().await
+        );
+        let _receiver1 = sender1.subscribe("1".to_string()).await;
+        let _receiver2 = sender2.subscribe("2".to_string()).await;
+        let _receiver3 = sender2.subscribe("3".to_string()).await;
+        assert_eq!(key_stream.n_keys().await, 3);
+        assert_eq!(sender1.n_keys().await, 3);
+        assert_eq!(sender2.n_keys().await, 3);
+        assert_eq!(
+            key_stream.key_capacity().await,
+            sender1.key_capacity().await
+        );
+        assert_eq!(
+            key_stream.key_capacity().await,
+            sender2.key_capacity().await
+        );
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_stream() {
-        run_on_localset(async {
-            use futures::StreamExt;
-            type WatchStream =
-                Pin<Box<dyn futures::Stream<Item = Result<String, RecvError>> + Send + 'static>>;
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let receiver = sender.subscribe("1".to_string()).await;
-            sender.send(&"1".to_string(), "value1".to_string()).await;
-            let stream = receiver.into_stream();
-            let stream = Box::pin(stream) as WatchStream;
-            sender.send(&"1".to_string(), "value2".to_string()).await;
-            let msg = timeout(Duration::from_secs(1), stream.take(2).collect::<Vec<_>>()).await;
-            let msg = msg.expect("timeout");
-            assert_eq!(
-                msg,
-                vec![Ok("value1".to_string()), Ok("value2".to_string())]
-            );
-        })
-        .await;
+        use futures::StreamExt;
+        type WatchStream =
+            Pin<Box<dyn futures::Stream<Item = Result<String, RecvError>> + 'static>>;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let receiver = sender.subscribe("1".to_string()).await;
+        sender.send(&"1".to_string(), "value1".to_string()).await;
+        let stream = receiver.into_stream();
+        let stream = Box::pin(stream) as WatchStream;
+        sender.send(&"1".to_string(), "value2".to_string()).await;
+        let msg = timeout(Duration::from_secs(1), stream.take(2).collect::<Vec<_>>()).await;
+        let msg = msg.expect("timeout");
+        assert_eq!(
+            msg,
+            vec![Ok("value1".to_string()), Ok("value2".to_string())]
+        );
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_stream_ends_when_channel_closes() {
-        run_on_localset(async {
-            use futures::StreamExt;
-            let key_stream = KeyStream::<String, String>::new(10);
-            let sender = key_stream.sender();
-            let receiver = sender.subscribe("1".to_string()).await;
-            sender.send(&"1".to_string(), "value".to_string()).await;
-            // Dropping the sender and the KeyStream drops the broadcast sender,
-            // closing the channel: the stream must yield the buffered message and
-            // then terminate instead of repeating Err(Closed) forever.
-            drop(sender);
-            drop(key_stream);
-            let stream = receiver.into_stream();
-            let msg = timeout(Duration::from_secs(1), stream.collect::<Vec<_>>()).await;
-            let msg = msg.expect("stream did not terminate after close");
-            assert_eq!(msg, vec![Ok("value".to_string())]);
-        })
-        .await;
+        use futures::StreamExt;
+        let key_stream = KeyStream::<String, String>::new(10);
+        let sender = key_stream.sender();
+        let receiver = sender.subscribe("1".to_string()).await;
+        sender.send(&"1".to_string(), "value".to_string()).await;
+        // Dropping the sender and the KeyStream drops the broadcast sender,
+        // closing the channel: the stream must yield the buffered message and
+        // then terminate instead of repeating Err(Closed) forever.
+        drop(sender);
+        drop(key_stream);
+        let stream = receiver.into_stream();
+        let msg = timeout(Duration::from_secs(1), stream.collect::<Vec<_>>()).await;
+        let msg = msg.expect("stream did not terminate after close");
+        assert_eq!(msg, vec![Ok("value".to_string())]);
     }
 
     #[derive(Clone)]
@@ -820,83 +768,110 @@ mod tests {
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_send_clone_sender_reentrant_drop_no_panic() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<u64, ReentrantDrop>::new(1);
-            let sender = key_stream.sender();
-            let mut lagging_receiver = sender.subscribe(1).await;
+        let key_stream = KeyStream::<u64, ReentrantDrop>::new(1);
+        let sender = key_stream.sender();
+        let mut lagging_receiver = sender.subscribe(1).await;
 
-            let armed = Rc::new(Cell::new(false));
-            let streams = Rc::clone(&key_stream.streams);
-            let on_drop: Rc<dyn Fn()> = Rc::new(move || {
-                let _guard = streams.borrow_mut();
-            });
+        let armed = Rc::new(Cell::new(false));
+        let streams = Rc::clone(&key_stream.streams);
+        let on_drop: Rc<dyn Fn()> = Rc::new(move || {
+            let _guard = streams.borrow_mut();
+        });
 
-            assert_eq!(
-                sender
-                    .send(
-                        &1,
-                        ReentrantDrop {
-                            armed: Rc::clone(&armed),
-                            on_drop: Rc::clone(&on_drop),
-                        },
-                    )
-                    .await,
-                1
-            );
+        assert_eq!(
+            sender
+                .send(
+                    &1,
+                    ReentrantDrop {
+                        armed: Rc::clone(&armed),
+                        on_drop: Rc::clone(&on_drop),
+                    },
+                )
+                .await,
+            1
+        );
 
-            std::hint::black_box(&mut lagging_receiver);
-            armed.set(true);
+        std::hint::black_box(&mut lagging_receiver);
+        armed.set(true);
 
-            assert_eq!(
-                sender
-                    .send(
-                        &1,
-                        ReentrantDrop {
-                            armed: Rc::clone(&armed),
-                            on_drop: Rc::clone(&on_drop),
-                        },
-                    )
-                    .await,
-                1
-            );
-        })
-        .await;
+        assert_eq!(
+            sender
+                .send(
+                    &1,
+                    ReentrantDrop {
+                        armed: Rc::clone(&armed),
+                        on_drop: Rc::clone(&on_drop),
+                    },
+                )
+                .await,
+            1
+        );
+    }
+
+    #[cfg(feature = "bench-variants")]
+    #[tokio::test(flavor = "current_thread")]
+    async fn test_bench_send_arc_sender_delivers_to_receivers() {
+        let key_stream = KeyStream::<u64, String>::new(8);
+        let sender = key_stream.sender();
+        let mut receiver = sender.subscribe(1).await;
+        assert_eq!(
+            sender
+                .__bench_send_arc_sender(&1, "value".to_string())
+                .await,
+            1
+        );
+        assert_eq!(receiver.recv().await.unwrap(), "value".to_string());
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn test_receiver_drop_take_first_prevents_reentrant_borrow_panic() {
+        // Regression: this specifically catches reordering inside KeyReceiver::drop.
+        // If map borrow happens before dropping the inner Receiver, dropping unread
+        // buffered values can re-enter the stream and panic with "already borrowed".
+        let key_stream = KeyStream::<u64, ReentrantDrop>::new(1);
+        let sender = key_stream.sender();
+        let receiver = sender.subscribe(1).await;
+
+        let armed = Rc::new(Cell::new(true));
+        let streams = Rc::clone(&key_stream.streams);
+        let on_drop: Rc<dyn Fn()> = Rc::new(move || {
+            let _guard = streams.borrow_mut();
+        });
+
+        assert_eq!(
+            sender
+                .send(
+                    &1,
+                    ReentrantDrop {
+                        armed: Rc::clone(&armed),
+                        on_drop,
+                    },
+                )
+                .await,
+            1
+        );
+
+        // Keep the value unread so dropping the receiver drains and drops it.
+        drop(receiver);
+        assert_eq!(key_stream.n_keys().await, 0);
     }
 
     #[tokio::test(flavor = "current_thread")]
     #[should_panic(expected = "already borrowed")]
     async fn test_send_guard_held_reentrant_drop_panics_refcell() {
-        run_on_localset(async {
-            let key_stream = KeyStream::<u64, ReentrantDrop>::new(1);
-            let sender = key_stream.sender();
-            let mut lagging_receiver = sender.subscribe(1).await;
+        let key_stream = KeyStream::<u64, ReentrantDrop>::new(1);
+        let sender = key_stream.sender();
+        let mut lagging_receiver = sender.subscribe(1).await;
 
-            let armed = Rc::new(Cell::new(false));
-            let streams = Rc::clone(&key_stream.streams);
-            let on_drop: Rc<dyn Fn()> = Rc::new(move || {
-                // Re-enter map mutation while send() still holds an immutable borrow.
-                let _guard = streams.borrow_mut();
-            });
+        let armed = Rc::new(Cell::new(false));
+        let streams = Rc::clone(&key_stream.streams);
+        let on_drop: Rc<dyn Fn()> = Rc::new(move || {
+            // Re-enter map mutation while send() still holds an immutable borrow.
+            let _guard = streams.borrow_mut();
+        });
 
-            assert_eq!(
-                sender
-                    .__bench_send_guard_held(
-                        &1,
-                        ReentrantDrop {
-                            armed: Rc::clone(&armed),
-                            on_drop: Rc::clone(&on_drop),
-                        },
-                    )
-                    .await,
-                1
-            );
-
-            // Keep the first value unread so the next send evicts and drops it.
-            std::hint::black_box(&mut lagging_receiver);
-
-            armed.set(true);
-
-            let _ = sender
+        assert_eq!(
+            sender
                 .__bench_send_guard_held(
                     &1,
                     ReentrantDrop {
@@ -904,8 +879,23 @@ mod tests {
                         on_drop: Rc::clone(&on_drop),
                     },
                 )
-                .await;
-        })
-        .await;
+                .await,
+            1
+        );
+
+        // Keep the first value unread so the next send evicts and drops it.
+        std::hint::black_box(&mut lagging_receiver);
+
+        armed.set(true);
+
+        let _ = sender
+            .__bench_send_guard_held(
+                &1,
+                ReentrantDrop {
+                    armed: Rc::clone(&armed),
+                    on_drop: Rc::clone(&on_drop),
+                },
+            )
+            .await;
     }
 }
