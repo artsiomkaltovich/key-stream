@@ -32,8 +32,8 @@ fn bench_subscribe_new_keys(c: &mut Criterion) {
                 rt.block_on(async move {
                     run_on_localset(async move {
                         let start = Instant::now();
-                    let stream = KeyStream::<u64, u64>::new(16);
-                    let sender = stream.sender();
+                        let stream = KeyStream::<u64, u64>::new(16);
+                        let sender = stream.sender();
                         for iter in 0..iters {
                             let base = iter * size as u64;
                             for key_offset in 0..size as u64 {
@@ -67,14 +67,13 @@ fn bench_send_single_key(c: &mut Criterion) {
             b.iter_custom(|iters| {
                 rt.block_on(async move {
                     run_on_localset(async move {
+                        let start = Instant::now();
                         let stream = KeyStream::<u64, u64>::new(1_024);
                         let sender = stream.sender();
                         let mut receivers = Vec::with_capacity(fanout);
                         for _ in 0..fanout {
                             receivers.push(sender.subscribe(1).await);
                         }
-
-                        let start = Instant::now();
                         for _ in 0..iters {
                             let delivered = sender.send(&1, 42).await;
                             std::hint::black_box(delivered);
@@ -105,20 +104,20 @@ fn bench_send_no_receiver(c: &mut Criterion) {
             rt.block_on(async move {
                 run_on_localset(async move {
                     let start = Instant::now();
-                        let stream = KeyStream::<u64, u64>::new(1_024);
-                        let sender = stream.sender();
+                    let stream = KeyStream::<u64, u64>::new(1_024);
+                    let sender = stream.sender();
 
-                        for _ in 0..iters {
-                            let delivered = sender.send(&1, 42).await;
-                            std::hint::black_box(delivered);
-                        }
+                    for _ in 0..iters {
+                        let delivered = sender.send(&1, 42).await;
+                        std::hint::black_box(delivered);
+                    }
 
-                        std::hint::black_box(stream);
-                        drop(sender);
-                        tokio::task::yield_now().await;
-                        start.elapsed()
-                    })
-                    .await
+                    std::hint::black_box(stream);
+                    drop(sender);
+                    tokio::task::yield_now().await;
+                    start.elapsed()
+                })
+                .await
             })
         });
     });
@@ -176,9 +175,9 @@ fn bench_recv_single_key_many_messages(c: &mut Criterion) {
                 rt.block_on(async move {
                     run_on_localset(async move {
                         let start = Instant::now();
-                    let stream = KeyStream::<u64, u64>::new(messages + 1);
-                    let sender = stream.sender();
-                    let mut receiver = sender.subscribe(1).await;
+                        let stream = KeyStream::<u64, u64>::new(messages + 1);
+                        let sender = stream.sender();
+                        let mut receiver = sender.subscribe(1).await;
 
                         for _ in 0..iters {
                             for value in 0..messages as u64 {
@@ -236,8 +235,9 @@ fn bench_recv_many_keys_many_messages(c: &mut Criterion) {
                                 let mut send_set = JoinSet::new();
                                 for key in 0..keys as u64 {
                                     let sender = sender.clone();
-                                    send_set
-                                        .spawn_local(async move { sender.send(&key, message).await });
+                                    send_set.spawn_local(async move {
+                                        sender.send(&key, message).await
+                                    });
                                 }
                                 while let Some(result) = send_set.join_next().await {
                                     std::hint::black_box(result.expect("send task panicked"));
