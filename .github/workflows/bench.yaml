@@ -1,22 +1,22 @@
 name: Benchmarks
 
 # Cross-architecture check. Local development happens on arm64 (Apple Silicon);
-# these runners are x86_64, where atomic costs differ enough to matter for the
-# send-variant comparison — x86 has a stronger memory model, so the AcqRel
-# traffic in `broadcast::Sender::clone` is relatively cheaper there than on ARM.
+# these runners are x86_64, where the cost of an atomic RMW is dominated by the
+# `lock` prefix rather than by memory ordering.
 #
-# READ THE NUMBERS WITH CARE. GitHub runners are shared VMs with noisy
-# neighbours; run-to-run spread here is far worse than on a quiet laptop.
-# Treat this as confirmation of large, directional effects — the ~5.8 ns
-# (~12%) penalty on `clone_sender` versus ~2.0 ns for the wrapped handles.
-# It cannot settle `rc_sender` vs `arc_sender`: locally those differ by a mean
-# of 0.12 ns over 60 cells, with `arc` ahead in 18 of them. That is a coin flip
-# on a quiet machine and will be pure noise here.
+# BOTH FEATURE CONFIGURATIONS RUN IN ONE JOB, SEQUENTIALLY, ON PURPOSE.
+# They used to run as a `strategy.matrix`, which put them on different runners —
+# and that silently destroyed comparability. Evidence: `send_no_receivers` is
+# byte-identical code in both builds and reproduces to 0.01 ns between configs
+# on a quiet local machine, but read 23.0 ns and 12.2 ns in two matrix jobs.
+# `lock`-op latency varies several-fold across the CPU models in GitHub's pool
+# (Intel Xeon vs AMD EPYC, different generations), so numbers from two jobs
+# cannot be compared at all. One job, one CPU, or the run answers nothing.
 #
-# Full matrix on every trigger, both feature configurations. This is expensive
-# — roughly 15 min per configuration locally — and deliberately so: a filtered
-# or `--quick` run produces phase numbers that cannot be compared against the
-# local baselines in bench-results/.
+# READ THE NUMBERS WITH CARE even so. Shared VMs are noisy; run-to-run spread
+# here is far worse than on a quiet laptop. Use `min`, and treat this as
+# confirmation of large directional effects rather than a way to resolve
+# sub-nanosecond differences.
 
 on:
   workflow_dispatch:
@@ -28,15 +28,7 @@ on:
 jobs:
   bench:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # off = production shape, the numbers Phase 1's decision gate reads.
-        # on  = adds Rc/Arc handles for the send-variant comparison; inflates
-        #       `subscribe` and `drop` by ~16-18% per key, so it must not be
-        #       used for the phase numbers.
-        variants: [off, on]
-    name: bench (bench-variants=${{ matrix.variants }})
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
       - name: Set up Rust toolchain
@@ -52,78 +44,70 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      # Recorded alongside the results: a number without the machine it came
-      # from is not comparable to anything.
+      # Artifacts are written OUTSIDE the checkout. Writing them into the repo
+      # made `git status --porcelain` non-empty, so every run self-reported as
+      # `-dirty` — inverting the meaning of a marker whose entire job is to warn
+      # that the measured code does not match the recorded commit.
+      - name: Prepare output dir
+        run: echo "OUT=$RUNNER_TEMP/bench" >> "$GITHUB_ENV"
+
       - name: Record machine
         run: |
+          mkdir -p "$OUT"
           {
             echo "runner_os=${{ runner.os }}"
             echo "runner_arch=${{ runner.arch }}"
             echo "nproc=$(nproc)"
+            echo "---"
             lscpu || true
-          } | tee machine.txt
+          } | tee "$OUT/machine.txt"
 
-      - name: Feature flags
-        id: flags
+      # Both configurations must compile and pass; catches feature-gate rot.
+      - name: Tests and clippy (both configs)
         run: |
-          if [ "${{ matrix.variants }}" = "on" ]; then
-            echo "features=--features bench-variants" >> "$GITHUB_OUTPUT"
-          else
-            echo "features=" >> "$GITHUB_OUTPUT"
-          fi
+          cargo test --locked
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo test --locked --features bench-variants
+          cargo clippy --locked --all-targets --features bench-variants -- -D warnings
 
-      # Catches feature-gate rot: the cfg'd code must compile and pass in both
-      # configurations, not just the one someone last built locally.
-      - name: Tests
-        run: cargo test --locked ${{ steps.flags.outputs.features }}
+      # Full matrix, no filter, no `--quick`. `--quick` collapses the iteration
+      # count, which starves the side-channel phase accumulator and produces a
+      # breakdown that cannot be compared against the baselines in
+      # bench-results/. Order matters: the production-shape run goes first so
+      # it sees the least-warmed machine, biasing against the config whose
+      # numbers feed Phase 1's decision gate rather than for it.
+      - name: Benchmark — production shape (bench-variants off)
+        run: cargo bench --locked --bench key_stream -- --noplot | tee "$OUT/off.raw.txt"
 
-      - name: Clippy
-        run: cargo clippy --locked --all-targets ${{ steps.flags.outputs.features }} -- -D warnings
-
-      # Always the full matrix: 60 IDs (4 modes x 5 distributions x 3 value
-      # types) per feature configuration. Locally that is ~15 min per config on
-      # a quiet machine; budget more on a shared runner.
-      #
-      # Deliberately NOT criterion's `--quick`, and no filter. `--quick`
-      # collapses the iteration count, which starves the side-channel phase
-      # accumulator and makes the whole breakdown meaningless — the cheap-looking
-      # option produces numbers that cannot be compared to anything.
-      - name: Run benchmarks (full matrix)
-        timeout-minutes: 90
+      - name: Benchmark — handle comparison (bench-variants on)
         run: |
-          cargo bench --locked --bench key_stream ${{ steps.flags.outputs.features }} \
-            -- --noplot | tee bench-output.txt
+          cargo bench --locked --features bench-variants --bench key_stream -- --noplot \
+            | tee "$OUT/on.raw.txt"
 
-      # A short cell count guards against a filter or config change silently
-      # shrinking coverage: 60 IDs, and 7 phases per ID without the feature
-      # (2 send variants) or 9 with it (4 send variants).
-      - name: Check coverage
+      - name: Extract and check coverage
         run: |
-          ids=$(grep -c '^full_cycle/' bench-output.txt || true)
-          if [ "${{ matrix.variants }}" = "on" ]; then want_rows=540; else want_rows=420; fi
-          rows=$(grep -c ',phase,' bench-output.txt || true)
-          echo "ids=$ids phase_rows=$rows (want 60 / $want_rows)"
-          [ "$ids" -eq 60 ] || { echo "::error::expected 60 benchmark IDs, got $ids"; exit 1; }
-          [ "$rows" -eq "$want_rows" ] || { echo "::error::expected $want_rows phase rows, got $rows"; exit 1; }
-          discarded=$(grep -c ',FAILED' bench-output.txt || true)
-          [ "$discarded" -eq 0 ] || echo "::warning::$discarded discarded-sample rows — see phases.csv"
-
-      # The phase breakdown is emitted on stdout as CSV, not written by
-      # criterion, so it has to be pulled out of the log explicitly.
-      - name: Extract phase CSV
-        run: |
-          grep -E ',(phase|FAILED)/?' bench-output.txt > phases.csv || true
-          echo "rows: $(wc -l < phases.csv)"
-          test -s phases.csv || { echo "::error::no phase rows captured"; exit 1; }
+          fail=0
+          check() {
+            local raw="$1" want_rows="$2" label="$3"
+            grep -E ',(phase|FAILED)/?' "$raw" > "${raw%.raw.txt}.phases.csv" || true
+            local ids rows disc
+            ids=$(grep -c '^full_cycle/' "$raw" || true)
+            rows=$(grep -c ',phase,' "$raw" || true)
+            disc=$(grep -c ',FAILED' "$raw" || true)
+            echo "$label: ids=$ids phase_rows=$rows discarded=$disc (want 60 / $want_rows / 0)"
+            [ "$ids" -eq 60 ] || { echo "::error::$label expected 60 IDs, got $ids"; fail=1; }
+            [ "$rows" -eq "$want_rows" ] || { echo "::error::$label expected $want_rows phase rows, got $rows"; fail=1; }
+            [ "$disc" -eq 0 ] || echo "::warning::$label had $disc discarded-sample rows"
+          }
+          check "$OUT/off.raw.txt" 420 "off"
+          check "$OUT/on.raw.txt"  540 "on"
+          exit $fail
 
       - name: Upload benchmark artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: key-stream-bench-${{ matrix.variants }}-${{ github.run_id }}
-          path: |
-            target/criterion
-            bench-output.txt
-            phases.csv
-            machine.txt
+          name: key-stream-bench-${{ github.run_id }}
+          path: ${{ runner.temp }}/bench
           if-no-files-found: error
           retention-days: 14

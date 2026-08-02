@@ -35,6 +35,8 @@ pub enum SendWithReceiversVariant {
 pub struct BenchMetadata {
     pub branch: String,
     pub commit: String,
+    pub arch: String,
+    pub cpu: String,
     pub backend: String,
     pub runtime_mode: String,
     pub workers: usize,
@@ -227,13 +229,21 @@ where
 }
 
 pub fn bench_metadata(runtime_mode: &str, workers: usize) -> BenchMetadata {
-    let mut commit = git_value(["rev-parse", "--short", "HEAD"]);
+    let git_commit = git_value(["rev-parse", "--short", "HEAD"]);
+    let short_len = git_commit.len().max(7);
+    let mut commit = env_non_empty("GITHUB_SHA")
+        .map(|sha| sha.chars().take(short_len).collect::<String>())
+        .unwrap_or(git_commit);
     if git_is_dirty() {
         commit.push_str("-dirty");
     }
     BenchMetadata {
-        branch: git_value(["rev-parse", "--abbrev-ref", "HEAD"]),
+        branch: env_non_empty("GITHUB_HEAD_REF")
+            .or_else(|| env_non_empty("GITHUB_REF_NAME"))
+            .unwrap_or_else(|| git_value(["rev-parse", "--abbrev-ref", "HEAD"])),
         commit,
+        arch: std::env::consts::ARCH.to_string(),
+        cpu: cpu_model(),
         backend: key_stream::__BENCH_BACKEND.to_string(),
         runtime_mode: runtime_mode.to_string(),
         workers,
@@ -245,7 +255,11 @@ pub fn bench_metadata(runtime_mode: &str, workers: usize) -> BenchMetadata {
 }
 
 fn git_value<const N: usize>(args: [&str; N]) -> String {
-    let output = Command::new("git").args(args).output();
+    command_value("git", &args)
+}
+
+fn command_value(command: &str, args: &[&str]) -> String {
+    let output = Command::new(command).args(args).output();
     match output {
         Ok(out) if out.status.success() => String::from_utf8_lossy(&out.stdout).trim().to_owned(),
         _ => "unknown".to_string(),
@@ -253,10 +267,53 @@ fn git_value<const N: usize>(args: [&str; N]) -> String {
 }
 
 fn git_is_dirty() -> bool {
-    let output = Command::new("git").args(["status", "--porcelain"]).output();
+    let output = Command::new("git")
+        .args(["status", "--porcelain", "--untracked-files=no"])
+        .output();
     match output {
         Ok(out) if out.status.success() => !out.stdout.is_empty(),
         _ => false,
+    }
+}
+
+fn env_non_empty(name: &str) -> Option<String> {
+    std::env::var(name).ok().filter(|v| !v.trim().is_empty())
+}
+
+#[cfg(target_os = "linux")]
+fn cpu_model() -> String {
+    if let Ok(cpuinfo) = std::fs::read_to_string("/proc/cpuinfo") {
+        for line in cpuinfo.lines() {
+            if let Some((_, value)) = line.split_once(':')
+                && line.starts_with("model name")
+            {
+                return sanitize_csv_field(value);
+            }
+        }
+    }
+    sanitize_csv_field("unknown")
+}
+
+#[cfg(target_os = "macos")]
+fn cpu_model() -> String {
+    sanitize_csv_field(&command_value(
+        "sysctl",
+        &["-n", "machdep.cpu.brand_string"],
+    ))
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+fn cpu_model() -> String {
+    sanitize_csv_field("unknown")
+}
+
+fn sanitize_csv_field(raw: &str) -> String {
+    let cleaned = raw.replace(',', " ");
+    let collapsed = cleaned.split_whitespace().collect::<Vec<_>>().join(" ");
+    if collapsed.is_empty() {
+        "unknown".to_string()
+    } else {
+        collapsed
     }
 }
 
@@ -392,9 +449,11 @@ pub fn dropvalue_drops() -> u64 {
 
 pub fn csv_prefix(meta: &BenchMetadata) -> String {
     format!(
-        "{},{},{},{},{},{},{},{},{}",
+        "{},{},{},{},{},{},{},{},{},{},{}",
         meta.branch,
         meta.commit,
+        meta.arch,
+        meta.cpu,
         meta.backend,
         meta.runtime_mode,
         meta.workers,
@@ -403,4 +462,14 @@ pub fn csv_prefix(meta: &BenchMetadata) -> String {
         meta.criterion_sample_size,
         meta.criterion_sampling_mode
     )
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn sanitizing_cpu_field_removes_commas_and_newlines() {
+        let sanitized = super::sanitize_csv_field("Intel, Xeon\nPlatinum\t8370C");
+        assert!(!sanitized.contains(','));
+        assert!(!sanitized.contains('\n'));
+    }
 }

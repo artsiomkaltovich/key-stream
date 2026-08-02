@@ -155,6 +155,11 @@ Full matrix, `min` per cell, arm64, zero discards —
 [bench-results/local-full-variants/](bench-results/local-full-variants/). Medians track the means
 to within 0.1 ns; `clone_sender` never fell below +4.16 in any cell.
 
+These numbers are correct for arm64, but not universal. The marginal cost of the first atomic pair
+was ~0.1 ns on Apple Silicon, while CI x86 runs showed ~2.6-10.5 ns depending on CPU model. So Q4b
+(`arc_sender` vs `clone_sender` for the shared backend) is architecture- **and** CPU-model
+dependent and cannot be closed until measurements are pinned to a known CPU.
+
 **`Rc` vs `Arc` is a coin flip.** Head-to-head over 60 cells: mean +0.12 ns, median +0.10,
 range −0.91 … +0.80, `arc` ahead in 18 of 60. The atomic refcount costs nothing measurable at this
 scale — so the handle choice does **not** argue for or against the local/shared split.

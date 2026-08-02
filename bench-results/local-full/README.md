@@ -6,7 +6,10 @@ Coverage: 60 benchmark IDs (4 modes × 5 distributions × 3 value types), 420 ph
 rows, **0 discarded samples**.
 
 `phases.csv` columns:
-`branch,commit,backend,runtime_mode,workers,warmup_ms,measurement_ms,samples,sampling,kind,phase,cell,min_ns,med_ns,p95_ns,n`
+`branch,commit,arch,cpu,backend,runtime_mode,workers,warmup_ms,measurement_ms,samples,sampling,kind,phase,cell,min_ns,med_ns,p95_ns,n`
+
+This baseline predates the `arch`/`cpu` prefix columns. The run was on arm64
+(Apple Silicon), so those columns are absent rather than empty.
 
 Statistic to read is `min_ns` — noise only ever adds time, and run-to-run spread
 on `min` was 0.05–0.5 ns across three repeats of a single cell.

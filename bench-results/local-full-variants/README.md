@@ -4,6 +4,12 @@ Machine: Apple Silicon (arm64), macOS. Quiet, no other load.
 Command: `cargo bench --features bench-variants --bench key_stream -- --noplot`
 Coverage: 60 benchmark IDs, 540 phase rows (9 phases: 4 send variants), **0 discards**.
 
+`phases.csv` columns:
+`branch,commit,arch,cpu,backend,runtime_mode,workers,warmup_ms,measurement_ms,samples,sampling,kind,phase,cell,min_ns,med_ns,p95_ns,n`
+
+This baseline predates the `arch`/`cpu` prefix columns. The run was on arm64
+(Apple Silicon), so those columns are absent rather than empty.
+
 Statistic is `min_ns`. Read the send-variant rows only — with this feature on,
 the map entry carries three handles, which inflates `subscribe` by ~18% and
 `drop` by ~16% per key. For those phases use the sibling `local-full/` run.
