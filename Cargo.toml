@@ -20,7 +20,3 @@ criterion = { version = "0.8", features = ["async_tokio"] }
 [[bench]]
 name = "key_stream"
 harness = false
-
-[[bench]]
-name = "phases"
-harness = false

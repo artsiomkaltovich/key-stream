@@ -40,9 +40,45 @@ times to get six numbers. Instead: **one pass, timestamped at each phase boundar
 lifecycle run yields every phase's cost with no repeated work, and because the phases sum to the
 whole, the full-cycle number falls out of the same pass for free.
 
-Criterion cannot express this — `iter_custom` returns exactly one `Duration` per benchmark. So
-this becomes a second bench target, `benches/phases.rs` with `harness = false`, running its own
-warmup and fixed sample count:
+This lives **inside the criterion run**, in one bench target. `iter_custom` returns a single
+`Duration`, but criterion only needs to *receive* one number — nothing stops the closure from
+timing each phase internally and pushing the breakdown to a side accumulator:
+
+```rust
+b.iter_custom(|iters| {
+    rt.block_on(async {
+        let mut total = Duration::ZERO;
+        for _ in 0..iters {
+            let (elapsed, phases) = run_pass_instrumented::<V>(mode, dist).await;
+            PHASE_SAMPLES.with(|s| s.borrow_mut().push(phases));
+            total += elapsed;
+        }
+        total
+    })
+});
+```
+
+Criterion gets its statistically-sound total; the breakdown comes from **the same passes**. One
+run, no repeated work, and `full_cycle` is the sum of the phases by construction rather than by
+convention — which doubles as a self-check: if total minus the phase sum exceeds the ~150 ns of
+intra-pass `Instant` overhead, something is mismeasured.
+
+A second `harness = false` target was the original design here, on the reasoning that "criterion
+cannot express this". That was wrong — it conflated *returning* one number with *observing* one
+number — and it cost a duplicated harness, a two-run workflow, and a requirement that both targets
+keep byte-identical cell names so their CSVs join. Merging removes all three.
+
+Three consequences to handle:
+
+- **Warmup iterations land in the accumulator**; nothing distinguishes them from inside the
+  closure. Acceptable: measurement runs ~6× more iterations than warmup at 3 s vs 500 ms, so they
+  are a slow tail that min ignores and that barely moves the median. Report N per cell.
+- **Discarded passes** (cleanup timeout) must still be counted in criterion's returned total, but
+  excluded from the phase statistics. Document that asymmetry and print the discard count.
+- **The three `send` variants run inside one pass**, back to back on the same stream with capacity
+  `3 × messages_per_key + 1`, drained once at the end. One benchmark ID per cell rather than
+  three, and the variants are compared under identical map and cache state — which is exactly the
+  condition the scratch numbers showed the answer depends on.
 
 One pass timing six phases:
 
@@ -113,6 +149,9 @@ gets chosen, and it is the reason that phase exists in this form:
 | `guard_held` | today's code — the guard spans the broadcast. **Unsafe**, carried only as the baseline | — |
 | `clone_sender` | clone `broadcast::Sender` out, release guard, broadcast | 16.4 ns |
 | `rc_sender` | map holds `Rc`/`Arc<broadcast::Sender<V>>`; clone that instead | `Rc` 4.1 ns / `Arc` 9.6 ns |
+
+Current branch status: shipping `KeySender::send` already uses the `clone_sender` path,
+and `guard_held` remains available only through bench-only helper methods as a comparison baseline.
 
 Those are *isolated* latencies from a scratch bench. An in-context run put `clone_sender` at only
 ~2 ns over `guard_held`, because the clone's atomics overlap the broadcast's own lock traffic.
@@ -223,23 +262,20 @@ comparison tooling works unchanged, with metadata **prefixed** as extra leading 
 commit, backend, runtime mode, worker count, `W`, `P`. Metadata goes in the run, not a sidecar —
 four series across four branches is exactly the setup where one mislabeled CSV costs the whole run.
 
-**Criterion retained for one group:** `full_cycle` — create → send → recv → drop with everything
-inside the timed span — run over **the same cells**, using the same
-`{mode}/{distribution}/{value}` benchmark IDs (`full_cycle/1x1/1key_10000msg/u64`,
-`full_cycle/4x4/10000key_1msg/String`, …). Identical cell names in both outputs means the two CSVs
-join on the cell and each phase breakdown sits next to a statistically-solid end-to-end number for
-the same workload.
+**One group, `full_cycle`**, over benchmark IDs `{mode}/{distribution}/{value}`
+(`full_cycle/1x1/1key_10000msg/u64`, `full_cycle/4x4/10000key_1msg/String`, …). Criterion reports
+the end-to-end number for each ID; the side accumulator reports the phase breakdown under the same
+cell name. They cannot disagree about which workload they describe, because they are the same
+passes — no cross-file join to keep in sync.
 
-Why keep it alongside the phase harness: criterion's warmup, outlier detection, and confidence
-intervals matter when the deltas being chased are 1-10%, and the hand-rolled harness gives a
-median, not a confidence interval. The phase harness answers *where* the time goes; criterion
-answers *whether the difference is real*. That is the "two runs":
-`cargo bench --bench phases` for the breakdown, `cargo bench --bench key_stream` for the gate.
-Drop the second if a plain median proves enough.
+Criterion earns its place here: its warmup, outlier detection, and confidence intervals matter when
+the deltas being chased are 1-10%, and min/median alone is not a confidence interval. Criterion
+answers *whether a difference is real*; the accumulator answers *where the time went*. One run,
+`cargo bench --bench key_stream -- --noplot`, produces both.
 
-`full_cycle` replaces `recv_many_keys_many_messages`, which uses `JoinSet`. The `local` side of
-both targets must use `futures::future::join_all` instead: `JoinSet::spawn` requires `Send`.
-Same constraint as the tests.
+`full_cycle` replaces `recv_many_keys_many_messages`, which uses `JoinSet`. The `local` side must
+use `futures::future::join_all` instead: `JoinSet::spawn` requires `Send`. Same constraint as the
+tests.
 
 Applied to **both** `bench` and `bench-sync-rwlock` before any spike branches, so all four Phase 1
 series share a harness. Numbers will not be comparable to the existing
@@ -314,10 +350,10 @@ choosing implementation direction, not building a deadlock harness.
 
 ### Measurement
 
-Per branch: `cargo bench --bench phases` for the breakdown and
-`CARGO_TERM_COLOR=never cargo bench --bench key_stream -- --noplot` for `full_cycle`, both landing
-CSV in a new `bench-results/<timestamp>/`. Four series: `bench`, `bench-sync-rwlock`,
-`spike-sync-drop-rc`, `spike-sync-drop-arc`.
+One command per branch: `CARGO_TERM_COLOR=never cargo bench --bench key_stream -- --noplot`,
+which emits both the `full_cycle` totals and the phase breakdown into a new
+`bench-results/<timestamp>/`. Four series: `bench`, `bench-sync-rwlock`, `spike-sync-drop-rc`,
+`spike-sync-drop-arc`.
 
 ### Decision gate
 
@@ -499,10 +535,11 @@ per backend.
 | [src/local.rs](src/local.rs) | New. `Backend` impl for `Rc<RefCell<…>>`, `Key`/`Value`, aliases, `//!` docs. |
 | [src/shared.rs](src/shared.rs) | New. `Backend` impl for `Arc<RwLock<…>>`, `Key`/`Value`, aliases, `//!` docs. |
 | [src/lib.rs](src/lib.rs) | Reduced to crate docs + `mod core; pub mod local; pub mod shared;`, plus a backend-selection guide. |
-| [Cargo.toml](Cargo.toml) | Add `futures = { version = "0.3", features = ["alloc"] }` to `[dev-dependencies]` — `join_all` needs it, and the current suite only compiles by inheriting the feature through criterion. Add the `phases` bench target (`harness = false`). |
-| `benches/phases.rs` | New in Phase 0. Single-pass phase breakdown over the 4×3×2 cells; parameterized over both backends in Phase 2 so one run covers all of it. |
-| [benches/key_stream.rs](benches/key_stream.rs) | Reduced to `full_cycle` over the same cells, parameterized over both backends. `shared` moves to a multi-thread runtime. |
-| [BENCH_DIFFS.md](BENCH_DIFFS.md) | Rules 3-5 now scope to `full_cycle`; record that per-phase costs come from the single-pass harness instead. |
+| [Cargo.toml](Cargo.toml) | Add `futures = { version = "0.3", features = ["alloc"] }` to `[dev-dependencies]` — `join_all` needs it, and the current suite only compiles by inheriting the feature through criterion. |
+| [benches/common/mod.rs](benches/common/mod.rs) | Shared workload: modes, distributions, value types, send variants, metadata. |
+| [benches/key_stream.rs](benches/key_stream.rs) | The only bench target. `full_cycle` plus the instrumented phase breakdown from the same passes; parameterized over both backends in Phase 2. `shared` moves to a multi-thread runtime. |
+| `benches/phases.rs` | **Deleted** — merged into the criterion target. |
+| [BENCH_DIFFS.md](BENCH_DIFFS.md) | Rules 3-5 now scope to `full_cycle`; record that per-phase costs come from the same instrumented passes. |
 | [README.md](README.md) | Examples → `shared::KeyStream`; add a backend-selection section. |
 | [CHANGELOG.md](CHANGELOG.md) | Under `[Unreleased] / Fixed`: `send` no longer runs `V::drop` while holding the map lock (panic on `local`, deadlock on `shared`). Under `Changed`: module split, removed root exports, `async fn` → `fn`, and (if Phase 1 lands) immediate rather than deferred key cleanup. |
 
@@ -517,8 +554,10 @@ per backend.
    rejected for want of `Send`. Confirms the backends differ in capability, not just in name.
 5. Hazard-A regression for `local`: a `V` whose `Drop` calls `subscribe` on a new key, driven
   until the ring wraps with a lagging receiver. Use panic-based assertions for this phase.
-6. `cargo bench --bench phases` and `cargo bench --bench key_stream` against the Phase 1 table,
-   phase by phase. Both backends should land within noise of their spike numbers; a large move
+6. `cargo bench --bench key_stream` against the Phase 1 table, phase by phase. Also check that
+   each cell's `full_cycle` total minus its phase sum stays within the ~150 ns of intra-pass
+   `Instant` overhead — a larger gap means a phase span is mismeasured. Both backends should land
+   within noise of their spike numbers; a large move
    means the `Backend` abstraction did not compile away. The two-branch checkout-and-diff workflow
    that produced [comparison.csv](bench-results/20260802-181501/comparison.csv) becomes
    unnecessary — after Phase 2 both backends live in one binary and each run compares them

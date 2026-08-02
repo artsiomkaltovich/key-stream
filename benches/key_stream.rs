@@ -1,238 +1,257 @@
-use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
-use futures::future::join_all;
-use key_stream::{KeyReceiver, KeySender, KeyStream, Value};
-use std::future::Future;
+use criterion::{
+    BenchmarkId, Criterion, SamplingMode, Throughput, criterion_group, criterion_main,
+};
+mod common;
+
+use common::{
+    BenchMetadata, BenchValue, CREATE_BATCH, CRITERION_MEASUREMENT_MS, CRITERION_SAMPLE_SIZE,
+    CRITERION_WARMUP_MS, DISTRIBUTIONS, DropValue, MODES, SendWithReceiversVariant,
+    bench_metadata, csv_prefix, full_cycle_elements, min_med_max, per_op_ns, recv_all,
+    run_on_localset, runtime, send_messages_no_receivers, send_messages_with_variant,
+    send_variant_label, subscribe_receivers, wait_for_cleanup,
+};
+use key_stream::KeyStream;
+use std::cell::RefCell;
+use std::collections::BTreeMap;
+use std::rc::Rc;
 use std::time::{Duration, Instant};
-use tokio::runtime::{Builder, Runtime};
-use tokio::task::LocalSet;
 
-#[derive(Clone, Copy)]
-struct Mode {
-    name: &'static str,
-    sender_tasks: usize,
-    receivers_per_key: usize,
+struct PhaseSamples {
+    rows: BTreeMap<String, Vec<f64>>,
+    attempts: usize,
+    discarded_cleanup_timeout: usize,
 }
 
-#[derive(Clone, Copy)]
-struct Distribution {
-    name: &'static str,
-    keys: usize,
-    messages_per_key: usize,
-}
-
-const MODES: [Mode; 4] = [
-    Mode {
-        name: "1x1",
-        sender_tasks: 1,
-        receivers_per_key: 1,
-    },
-    Mode {
-        name: "16x1",
-        sender_tasks: 16,
-        receivers_per_key: 1,
-    },
-    Mode {
-        name: "1x16",
-        sender_tasks: 1,
-        receivers_per_key: 16,
-    },
-    Mode {
-        name: "4x4",
-        sender_tasks: 4,
-        receivers_per_key: 4,
-    },
-];
-
-const DISTRIBUTIONS: [Distribution; 3] = [
-    Distribution {
-        name: "1key_10000msg",
-        keys: 1,
-        messages_per_key: 10_000,
-    },
-    Distribution {
-        name: "100key_100msg",
-        keys: 100,
-        messages_per_key: 100,
-    },
-    Distribution {
-        name: "10000key_1msg",
-        keys: 10_000,
-        messages_per_key: 1,
-    },
-];
-
-const MAX_CLEANUP_YIELDS: usize = 10_000;
-const MAX_CLEANUP_WAIT: Duration = Duration::from_secs(1);
-
-trait BenchValue: Value + Clone + 'static {
-    fn from_index(index: u64) -> Self;
-    fn label() -> &'static str;
-}
-
-impl BenchValue for u64 {
-    fn from_index(index: u64) -> Self {
-        index
-    }
-
-    fn label() -> &'static str {
-        "u64"
-    }
-}
-
-impl BenchValue for String {
-    fn from_index(index: u64) -> Self {
-        format!("v{index}")
-    }
-
-    fn label() -> &'static str {
-        "String"
-    }
-}
-
-impl Distribution {
-    fn total_sends(self) -> usize {
-        self.keys * self.messages_per_key
-    }
-}
-
-fn runtime() -> Runtime {
-    Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .expect("failed to build tokio runtime")
-}
-
-async fn run_on_localset<F, T>(fut: F) -> T
-where
-    F: Future<Output = T>,
-{
-    LocalSet::new().run_until(fut).await
-}
-
-async fn subscribe_receivers<V: BenchValue>(
-    sender: &KeySender<u64, V>,
-    mode: Mode,
-    dist: Distribution,
-) -> Vec<Vec<KeyReceiver<u64, V>>> {
-    let mut receivers = Vec::with_capacity(dist.keys);
-    for key in 0..dist.keys {
-        let mut per_key = Vec::with_capacity(mode.receivers_per_key);
-        for _ in 0..mode.receivers_per_key {
-            per_key.push(sender.subscribe(key as u64).await);
-        }
-        receivers.push(per_key);
-    }
-    receivers
-}
-
-async fn send_messages<V: BenchValue>(
-    sender: &KeySender<u64, V>,
-    mode: Mode,
-    dist: Distribution,
-    missing_keys: bool,
-) {
-    let total = dist.total_sends();
-    let chunk = total.div_ceil(mode.sender_tasks);
-    let workers = (0..mode.sender_tasks).map(|task_idx| {
-        let start = task_idx * chunk;
-        let end = ((task_idx + 1) * chunk).min(total);
-        async move {
-            for op in start..end {
-                let base_key = (op % dist.keys) as u64;
-                let key = if missing_keys {
-                    1_000_000 + dist.keys as u64 + base_key
-                } else {
-                    base_key
-                };
-                let delivered = sender.send(&key, V::from_index(op as u64)).await;
-                std::hint::black_box(delivered);
-            }
-        }
-    });
-    join_all(workers).await;
-}
-
-async fn recv_all<V: BenchValue>(receivers: &mut [Vec<KeyReceiver<u64, V>>], dist: Distribution) {
-    for per_key in receivers.iter_mut() {
-        for receiver in per_key.iter_mut() {
-            for _ in 0..dist.messages_per_key {
-                let value = receiver.recv().await.expect("receiver closed unexpectedly");
-                std::hint::black_box(value);
-            }
+impl PhaseSamples {
+    fn new() -> Self {
+        Self {
+            rows: BTreeMap::new(),
+            attempts: 0,
+            discarded_cleanup_timeout: 0,
         }
     }
+
+    fn push(&mut self, phase: &str, value: f64) {
+        self.rows.entry(phase.to_string()).or_default().push(value);
+    }
+
+    fn successful_samples(&self) -> usize {
+        self.rows.values().next().map_or(0, Vec::len)
+    }
 }
 
-async fn wait_for_cleanup<V: BenchValue>(stream: &KeyStream<u64, V>) {
+enum DiscardReason {
+    CleanupTimeout,
+}
+
+async fn run_full_cycle_once<V: BenchValue>(
+    mode: common::Mode,
+    dist: common::Distribution,
+) -> (Duration, Result<[f64; 8], DiscardReason>) {
     let start = Instant::now();
-    for _ in 0..MAX_CLEANUP_YIELDS {
-        if stream.n_keys().await == 0 {
-            return;
-        }
-        if start.elapsed() > MAX_CLEANUP_WAIT {
-            panic!("cleanup timeout waiting for dropped keys");
-        }
-        tokio::task::yield_now().await;
-    }
-    panic!("cleanup did not finish within yield budget");
-}
 
-async fn run_full_cycle_once<V: BenchValue>(mode: Mode, dist: Distribution) -> Duration {
-    let start = Instant::now();
-    let stream = KeyStream::<u64, V>::new(dist.messages_per_key.saturating_add(1).max(2));
+    let create_start = Instant::now();
+    let mut stream = None;
+    for idx in 0..CREATE_BATCH {
+        let current = KeyStream::<u64, V>::new(
+            dist.messages_per_key
+                .saturating_mul(3)
+                .saturating_add(1)
+                .max(2),
+        );
+        if idx + 1 == CREATE_BATCH {
+            stream = Some(current);
+        } else {
+            drop(current);
+        }
+    }
+    let stream = stream.expect("create stream missing");
     let sender = stream.sender();
+    let mut phases = [0.0; 8];
+    phases[0] = per_op_ns(create_start.elapsed(), CREATE_BATCH);
 
+    let subscribe_start = Instant::now();
     let mut receivers = subscribe_receivers(&sender, mode, dist).await;
-    send_messages(&sender, mode, dist, false).await;
-    send_messages(&sender, mode, dist, true).await;
-    recv_all(&mut receivers, dist).await;
+    phases[1] = per_op_ns(subscribe_start.elapsed(), dist.receivers(mode));
 
+    let send_guard_start = Instant::now();
+    send_messages_with_variant(
+        &sender,
+        mode,
+        dist,
+        SendWithReceiversVariant::GuardHeld,
+    )
+    .await;
+    phases[2] = per_op_ns(send_guard_start.elapsed(), dist.total_sends());
+
+    let send_clone_start = Instant::now();
+    send_messages_with_variant(
+        &sender,
+        mode,
+        dist,
+        SendWithReceiversVariant::CloneSender,
+    )
+    .await;
+    phases[3] = per_op_ns(send_clone_start.elapsed(), dist.total_sends());
+
+    let send_rc_start = Instant::now();
+    send_messages_with_variant(
+        &sender,
+        mode,
+        dist,
+        SendWithReceiversVariant::RcSender,
+    )
+    .await;
+    phases[4] = per_op_ns(send_rc_start.elapsed(), dist.total_sends());
+
+    let send_none_start = Instant::now();
+    send_messages_no_receivers(&sender, mode, dist).await;
+    phases[5] = per_op_ns(send_none_start.elapsed(), dist.total_sends());
+
+    let recv_start = Instant::now();
+    recv_all(&mut receivers, dist).await;
+    recv_all(&mut receivers, dist).await;
+    recv_all(&mut receivers, dist).await;
+    phases[6] = per_op_ns(recv_start.elapsed(), dist.recv_messages(mode) * 3);
+
+    let drop_start = Instant::now();
     drop(receivers);
-    wait_for_cleanup(&stream).await;
+    if !wait_for_cleanup(&stream).await {
+        return (start.elapsed(), Err(DiscardReason::CleanupTimeout));
+    }
+    phases[7] = per_op_ns(drop_start.elapsed(), dist.receivers(mode));
 
     drop(sender);
     drop(stream);
-    start.elapsed()
+    (start.elapsed(), Ok(phases))
 }
 
 fn bench_full_cycle_for_value<V: BenchValue>(
     group: &mut criterion::BenchmarkGroup<'_, criterion::measurement::WallTime>,
-    rt: &Runtime,
-    mode: Mode,
-    dist: Distribution,
+    rt: &tokio::runtime::Runtime,
+    mode: common::Mode,
+    dist: common::Distribution,
+    samples: Rc<RefCell<BTreeMap<String, PhaseSamples>>>,
 ) {
-    let id = format!("{}/{}/{}", mode.name, dist.name, V::label());
-    group.throughput(Throughput::Elements(dist.total_sends() as u64));
-    group.bench_function(BenchmarkId::from_parameter(id), |b| {
+    let cell = format!("{}/{}/{}", mode.name, dist.name, V::label());
+    let bench_id = BenchmarkId::from_parameter(cell.clone());
+    group.throughput(Throughput::Elements(full_cycle_elements(mode, dist)));
+    group.bench_function(bench_id, |b| {
+        let samples = Rc::clone(&samples);
+        let cell = cell.clone();
         b.iter_custom(|iters| {
+            let samples = Rc::clone(&samples);
+            let cell = cell.clone();
             rt.block_on(async move {
-                run_on_localset(async move {
-                    let mut total = Duration::ZERO;
-                    for _ in 0..iters {
-                        total += run_full_cycle_once::<V>(mode, dist).await;
+                let mut total = Duration::ZERO;
+                for _ in 0..iters {
+                    let (elapsed, pass) = run_on_localset(run_full_cycle_once::<V>(mode, dist)).await;
+                    total += elapsed;
+
+                    let mut all = samples.borrow_mut();
+                    let entry = all.entry(cell.clone()).or_insert_with(PhaseSamples::new);
+                    entry.attempts += 1;
+                    match pass {
+                        Ok(phases) => {
+                            entry.push("create", phases[0]);
+                            entry.push("subscribe", phases[1]);
+                            entry.push(
+                                &format!(
+                                    "send_with_receivers/{}",
+                                    send_variant_label(SendWithReceiversVariant::GuardHeld)
+                                ),
+                                phases[2],
+                            );
+                            entry.push(
+                                &format!(
+                                    "send_with_receivers/{}",
+                                    send_variant_label(SendWithReceiversVariant::CloneSender)
+                                ),
+                                phases[3],
+                            );
+                            entry.push(
+                                &format!(
+                                    "send_with_receivers/{}",
+                                    send_variant_label(SendWithReceiversVariant::RcSender)
+                                ),
+                                phases[4],
+                            );
+                            entry.push("send_no_receivers", phases[5]);
+                            entry.push("recv", phases[6]);
+                            entry.push("drop", phases[7]);
+                        }
+                        Err(DiscardReason::CleanupTimeout) => {
+                            entry.discarded_cleanup_timeout += 1;
+                        }
                     }
-                    total
-                })
-                .await
+                }
+                total
             })
         });
     });
 }
 
+fn print_phase_breakdown(meta: &BenchMetadata, samples: &mut BTreeMap<String, PhaseSamples>) {
+    for (cell, phase_samples) in samples.iter_mut() {
+        let successful = phase_samples.successful_samples();
+        if phase_samples.discarded_cleanup_timeout > 0 {
+            println!(
+                "{},failed,{},cleanup_timeout,{},{},{}",
+                csv_prefix(meta),
+                cell,
+                phase_samples.discarded_cleanup_timeout,
+                phase_samples.attempts,
+                successful
+            );
+        }
+
+        for (phase, values) in phase_samples.rows.iter_mut() {
+            let (min, med, _) = min_med_max(values);
+            let p95_idx = (values.len() - 1) * 95 / 100;
+            let p95 = values[p95_idx];
+            println!(
+                "{},phase,{},{},{:.3},{:.3},{:.3},{}",
+                csv_prefix(meta),
+                phase,
+                cell,
+                min,
+                med,
+                p95,
+                successful
+            );
+        }
+    }
+}
+
 fn bench_full_cycle(c: &mut Criterion) {
+    let meta = bench_metadata();
     let rt = runtime();
+    let samples: Rc<RefCell<BTreeMap<String, PhaseSamples>>> =
+        Rc::new(RefCell::new(BTreeMap::new()));
+
     let mut group = c.benchmark_group("full_cycle");
-    group.sample_size(40);
-    group.measurement_time(Duration::from_secs(12));
+    group.sample_size(CRITERION_SAMPLE_SIZE);
+    group.warm_up_time(Duration::from_millis(CRITERION_WARMUP_MS));
+    group.measurement_time(Duration::from_millis(CRITERION_MEASUREMENT_MS));
+    group.sampling_mode(SamplingMode::Flat);
 
     for mode in MODES {
         for dist in DISTRIBUTIONS {
-            bench_full_cycle_for_value::<u64>(&mut group, &rt, mode, dist);
-            bench_full_cycle_for_value::<String>(&mut group, &rt, mode, dist);
+            bench_full_cycle_for_value::<u64>(&mut group, &rt, mode, dist, Rc::clone(&samples));
+            bench_full_cycle_for_value::<String>(&mut group, &rt, mode, dist, Rc::clone(&samples));
+            bench_full_cycle_for_value::<DropValue>(
+                &mut group,
+                &rt,
+                mode,
+                dist,
+                Rc::clone(&samples),
+            );
         }
     }
 
     group.finish();
+
+    print_phase_breakdown(&meta, &mut samples.borrow_mut());
 }
 
 criterion_group!(benches, bench_full_cycle);

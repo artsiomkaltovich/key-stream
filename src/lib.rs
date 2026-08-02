@@ -73,7 +73,7 @@ pub trait Value: Clone + 'static {}
 impl<T: Clone + 'static> Value for T {}
 impl<T: std::hash::Hash + Eq + Clone + 'static> Key for T {}
 
-type Streams<K, V> = Rc<RefCell<HashMap<K, broadcast::Sender<V>>>>;
+type Streams<K, V> = Rc<RefCell<HashMap<K, Rc<broadcast::Sender<V>>>>>;
 
 /// The main entry point for key-based async message streaming.
 ///
@@ -133,7 +133,7 @@ impl<K: Key, V: Value> KeyStream<K, V> {
     /// [`tokio::sync::broadcast::channel`] requires a positive capacity.
     pub fn new(broadcast_capacity: usize) -> Self {
         let (sender, receiver) = unbounded_channel::<K>();
-        let streams = Rc::new(RefCell::new(HashMap::<K, broadcast::Sender<V>>::new()));
+        let streams = Rc::new(RefCell::new(HashMap::<K, Rc<broadcast::Sender<V>>>::new()));
         let on_drop_task = tokio::task::spawn_local(cleanup_keys(receiver, Rc::clone(&streams)));
         Self {
             broadcast_capacity,
@@ -176,15 +176,48 @@ impl<K: Key, V: Value> KeySender<K, V> {
     ///
     /// Returns the number of receivers the message was sent to, or 0 if none.
     pub async fn send(&self, key: &K, value: V) -> usize {
+        self.__bench_send_clone_sender(key, value).await
+    }
+
+    #[doc(hidden)]
+    pub fn __bench_sender_clone_for_key(&self, key: &K) -> Option<Rc<broadcast::Sender<V>>> {
+        let streams = self.streams.borrow();
+        streams.get(key).cloned()
+    }
+
+    #[doc(hidden)]
+    pub async fn __bench_send_guard_held(&self, key: &K, value: V) -> usize {
         let streams = self.streams.borrow();
         if let Some(sender) = streams.get(key) {
-            // The key stays in the map until the cleanup task processes the drop
-            // notification, so the broadcast sender may already have zero
-            // receivers here; treat that the same as a missing key.
             sender.send(value).unwrap_or(0)
         } else {
             0
         }
+    }
+
+    #[doc(hidden)]
+    pub async fn __bench_send_clone_sender(&self, key: &K, value: V) -> usize {
+        let sender = {
+            let streams = self.streams.borrow();
+            streams.get(key).map(|sender| sender.as_ref().clone())
+        };
+        if let Some(sender) = sender {
+            sender.send(value).unwrap_or(0)
+        } else {
+            0
+        }
+    }
+
+    #[doc(hidden)]
+    pub async fn __bench_send_rc_sender_lookup(&self, key: &K, value: V) -> usize {
+        let sender = {
+            let streams = self.streams.borrow();
+            streams.get(key).cloned()
+        };
+        let Some(sender) = sender else {
+            return 0;
+        };
+        sender.send(value).unwrap_or(0)
     }
 
     /// Subscribe to messages for the given key.
@@ -199,7 +232,7 @@ impl<K: Key, V: Value> KeySender<K, V> {
             let mut streams = self.streams.borrow_mut();
             let sender = streams.entry(key.clone()).or_insert_with(|| {
                 let (sender, _) = broadcast::channel(self.broadcast_capacity);
-                sender
+                Rc::new(sender)
             });
             sender.subscribe()
         };
@@ -299,7 +332,7 @@ async fn cleanup_keys<K: Key, V: Value>(
     }
 }
 
-fn optimize_dict_mem<K: Key, V: Value>(streams: &mut HashMap<K, broadcast::Sender<V>>) {
+fn optimize_dict_mem<K: Key, V: Value>(streams: &mut HashMap<K, Rc<broadcast::Sender<V>>>) {
     // If the number of keys is less than half the capacity and the capacity is big enough,
     // shrink the capacity to save memory
     let cap = streams.capacity() >> 1;
@@ -786,8 +819,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    #[should_panic(expected = "already borrowed")]
-    async fn test_send_reentrant_drop_panics_refcell() {
+    async fn test_send_clone_sender_reentrant_drop_no_panic() {
         run_on_localset(async {
             let key_stream = KeyStream::<u64, ReentrantDrop>::new(1);
             let sender = key_stream.sender();
@@ -796,7 +828,6 @@ mod tests {
             let armed = Rc::new(Cell::new(false));
             let streams = Rc::clone(&key_stream.streams);
             let on_drop: Rc<dyn Fn()> = Rc::new(move || {
-                // Re-enter map mutation while send() still holds an immutable borrow.
                 let _guard = streams.borrow_mut();
             });
 
@@ -813,13 +844,60 @@ mod tests {
                 1
             );
 
+            std::hint::black_box(&mut lagging_receiver);
+            armed.set(true);
+
+            assert_eq!(
+                sender
+                    .send(
+                        &1,
+                        ReentrantDrop {
+                            armed: Rc::clone(&armed),
+                            on_drop: Rc::clone(&on_drop),
+                        },
+                    )
+                    .await,
+                1
+            );
+        })
+        .await;
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    #[should_panic(expected = "already borrowed")]
+    async fn test_send_guard_held_reentrant_drop_panics_refcell() {
+        run_on_localset(async {
+            let key_stream = KeyStream::<u64, ReentrantDrop>::new(1);
+            let sender = key_stream.sender();
+            let mut lagging_receiver = sender.subscribe(1).await;
+
+            let armed = Rc::new(Cell::new(false));
+            let streams = Rc::clone(&key_stream.streams);
+            let on_drop: Rc<dyn Fn()> = Rc::new(move || {
+                // Re-enter map mutation while send() still holds an immutable borrow.
+                let _guard = streams.borrow_mut();
+            });
+
+            assert_eq!(
+                sender
+                    .__bench_send_guard_held(
+                        &1,
+                        ReentrantDrop {
+                            armed: Rc::clone(&armed),
+                            on_drop: Rc::clone(&on_drop),
+                        },
+                    )
+                    .await,
+                1
+            );
+
             // Keep the first value unread so the next send evicts and drops it.
             std::hint::black_box(&mut lagging_receiver);
 
             armed.set(true);
 
             let _ = sender
-                .send(
+                .__bench_send_guard_held(
                     &1,
                     ReentrantDrop {
                         armed: Rc::clone(&armed),

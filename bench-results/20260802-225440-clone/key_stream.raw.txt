@@ -1,0 +1,100 @@
+full_cycle/1x1/1key_10000msg/u64
+                        time:   [1.0009 ms 1.0078 ms 1.0157 ms]
+                        thrpt:  [9.8459 Melem/s 9.9229 Melem/s 9.9909 Melem/s]
+                 change:
+                        time:   [+3.3934% +4.0082% +4.6221%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.4179% −3.8537% −3.2820%]
+                        Performance has regressed.
+Found 6 outliers among 40 measurements (15.00%)
+  4 (10.00%) high mild
+  2 (5.00%) high severe
+full_cycle/1x1/1key_10000msg/String
+                        time:   [2.5253 ms 2.5408 ms 2.5597 ms]
+                        thrpt:  [3.9067 Melem/s 3.9357 Melem/s 3.9599 Melem/s]
+                 change:
+                        time:   [−0.9718% −0.5442% +0.0145%] (p = 0.03 < 0.05)
+                        thrpt:  [−0.0145% +0.5472% +0.9814%]
+                        Change within noise threshold.
+Found 3 outliers among 40 measurements (7.50%)
+  1 (2.50%) high mild
+  2 (5.00%) high severe
+full_cycle/1x1/100key_100msg/u64
+                        time:   [1.1151 ms 1.1202 ms 1.1281 ms]
+                        thrpt:  [8.8645 Melem/s 8.9268 Melem/s 8.9678 Melem/s]
+                 change:
+                        time:   [+2.6460% +3.0208% +3.5603%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.4379% −2.9322% −2.5777%]
+                        Performance has regressed.
+Found 2 outliers among 40 measurements (5.00%)
+  1 (2.50%) low mild
+  1 (2.50%) high severe
+full_cycle/1x1/100key_100msg/String
+                        time:   [2.6991 ms 2.7340 ms 2.7702 ms]
+                        thrpt:  [3.6098 Melem/s 3.6576 Melem/s 3.7049 Melem/s]
+                 change:
+                        time:   [−1.8939% −0.8604% +0.2944%] (p = 0.14 > 0.05)
+                        thrpt:  [−0.2936% +0.8679% +1.9305%]
+                        No change in performance detected.
+Found 1 outliers among 40 measurements (2.50%)
+  1 (2.50%) high severe
+full_cycle/1x1/10000key_1msg/u64
+                        time:   [4.8500 ms 4.8830 ms 4.9309 ms]
+                        thrpt:  [2.0280 Melem/s 2.0479 Melem/s 2.0618 Melem/s]
+                 change:
+                        time:   [+0.6768% +1.6710% +3.0663%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.9750% −1.6435% −0.6722%]
+                        Change within noise threshold.
+Found 4 outliers among 40 measurements (10.00%)
+  1 (2.50%) high mild
+  3 (7.50%) high severe
+full_cycle/1x1/10000key_1msg/String
+                        time:   [6.3959 ms 6.6093 ms 6.9373 ms]
+                        thrpt:  [1.4415 Melem/s 1.5130 Melem/s 1.5635 Melem/s]
+                 change:
+                        time:   [+0.4780% +2.3345% +5.3071%] (p = 0.05 < 0.05)
+                        thrpt:  [−5.0396% −2.2813% −0.4757%]
+                        Change within noise threshold.
+Found 5 outliers among 40 measurements (12.50%)
+  1 (2.50%) high mild
+  4 (10.00%) high severe
+full_cycle/16x1/1key_10000msg/u64
+                        time:   [1.0135 ms 1.0229 ms 1.0342 ms]
+                        thrpt:  [9.6689 Melem/s 9.7761 Melem/s 9.8665 Melem/s]
+                 change:
+                        time:   [+3.8502% +4.9672% +6.3051%] (p = 0.00 < 0.05)
+                        thrpt:  [−5.9311% −4.7322% −3.7074%]
+                        Performance has regressed.
+Found 9 outliers among 40 measurements (22.50%)
+  1 (2.50%) low mild
+  2 (5.00%) high mild
+  6 (15.00%) high severe
+full_cycle/16x1/1key_10000msg/String
+                        time:   [2.4564 ms 2.4748 ms 2.4973 ms]
+                        thrpt:  [4.0043 Melem/s 4.0407 Melem/s 4.0711 Melem/s]
+                 change:
+                        time:   [−6.5802% −3.5551% −1.5279%] (p = 0.00 < 0.05)
+                        thrpt:  [+1.5516% +3.6861% +7.0436%]
+                        Performance has improved.
+Found 3 outliers among 40 measurements (7.50%)
+  2 (5.00%) high mild
+  1 (2.50%) high severe
+full_cycle/16x1/100key_100msg/u64
+                        time:   [1.0811 ms 1.0914 ms 1.1032 ms]
+                        thrpt:  [9.0643 Melem/s 9.1622 Melem/s 9.2499 Melem/s]
+                 change:
+                        time:   [−0.1575% +0.8528% +2.3767%] (p = 0.22 > 0.05)
+                        thrpt:  [−2.3216% −0.8456% +0.1578%]
+                        No change in performance detected.
+Found 2 outliers among 40 measurements (5.00%)
+  1 (2.50%) high mild
+  1 (2.50%) high severe
+full_cycle/16x1/100key_100msg/String
+                        time:   [2.6225 ms 2.6421 ms 2.6670 ms]
+                        thrpt:  [3.7495 Melem/s 3.7849 Melem/s 3.8131 Melem/s]
+                 change:
+                        time:   [−2.9097% −1.5735% +0.0586%] (p = 0.04 < 0.05)
+                        thrpt:  [−0.0586% +1.5987% +2.9969%]
+                        Change within noise threshold.
+Found 2 outliers among 40 measurements (5.00%)
+  1 (2.50%) high mild
+  1 (2.50%) high severe

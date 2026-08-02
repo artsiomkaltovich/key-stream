@@ -1,0 +1,145 @@
+full_cycle/1x1/1key_10000msg/u64
+                        time:   [970.81 µs 973.28 µs 976.34 µs]
+                        thrpt:  [10.242 Melem/s 10.275 Melem/s 10.301 Melem/s]
+Found 2 outliers among 40 measurements (5.00%)
+  2 (5.00%) high severe
+full_cycle/1x1/1key_10000msg/String
+                        time:   [2.5399 ms 2.5453 ms 2.5511 ms]
+                        thrpt:  [3.9200 Melem/s 3.9288 Melem/s 3.9372 Melem/s]
+Found 1 outliers among 40 measurements (2.50%)
+  1 (2.50%) low severe
+full_cycle/1x1/100key_100msg/u64
+                        time:   [1.0832 ms 1.0854 ms 1.0878 ms]
+                        thrpt:  [9.1929 Melem/s 9.2129 Melem/s 9.2316 Melem/s]
+Found 2 outliers among 40 measurements (5.00%)
+  2 (5.00%) high mild
+full_cycle/1x1/100key_100msg/String
+                        time:   [2.7495 ms 2.7584 ms 2.7733 ms]
+                        thrpt:  [3.6058 Melem/s 3.6253 Melem/s 3.6371 Melem/s]
+Found 5 outliers among 40 measurements (12.50%)
+  1 (2.50%) low severe
+  3 (7.50%) low mild
+  1 (2.50%) high severe
+full_cycle/1x1/10000key_1msg/u64
+                        time:   [4.8100 ms 4.8388 ms 4.8824 ms]
+                        thrpt:  [2.0482 Melem/s 2.0666 Melem/s 2.0790 Melem/s]
+Found 3 outliers among 40 measurements (7.50%)
+  1 (2.50%) low mild
+  2 (5.00%) high severe
+full_cycle/1x1/10000key_1msg/String
+                        time:   [6.3444 ms 6.3577 ms 6.3735 ms]
+                        thrpt:  [1.5690 Melem/s 1.5729 Melem/s 1.5762 Melem/s]
+Found 5 outliers among 40 measurements (12.50%)
+  1 (2.50%) low mild
+  2 (5.00%) high mild
+  2 (5.00%) high severe
+full_cycle/16x1/1key_10000msg/u64
+                        time:   [971.68 µs 972.46 µs 973.49 µs]
+                        thrpt:  [10.272 Melem/s 10.283 Melem/s 10.291 Melem/s]
+Found 6 outliers among 40 measurements (15.00%)
+  1 (2.50%) low mild
+  4 (10.00%) high mild
+  1 (2.50%) high severe
+full_cycle/16x1/1key_10000msg/String
+                        time:   [2.5337 ms 2.6374 ms 2.8341 ms]
+                        thrpt:  [3.5285 Melem/s 3.7916 Melem/s 3.9468 Melem/s]
+Found 3 outliers among 40 measurements (7.50%)
+  1 (2.50%) high mild
+  2 (5.00%) high severe
+full_cycle/16x1/100key_100msg/u64
+                        time:   [1.0850 ms 1.0866 ms 1.0880 ms]
+                        thrpt:  [9.1914 Melem/s 9.2028 Melem/s 9.2169 Melem/s]
+Found 6 outliers among 40 measurements (15.00%)
+  1 (2.50%) low severe
+  2 (5.00%) low mild
+  2 (5.00%) high mild
+  1 (2.50%) high severe
+full_cycle/16x1/100key_100msg/String
+                        time:   [2.7082 ms 2.7170 ms 2.7277 ms]
+                        thrpt:  [3.6661 Melem/s 3.6805 Melem/s 3.6925 Melem/s]
+full_cycle/16x1/10000key_1msg/u64
+                        time:   [4.8093 ms 4.8238 ms 4.8467 ms]
+                        thrpt:  [2.0632 Melem/s 2.0731 Melem/s 2.0793 Melem/s]
+Found 5 outliers among 40 measurements (12.50%)
+  1 (2.50%) low severe
+  2 (5.00%) high mild
+  2 (5.00%) high severe
+full_cycle/16x1/10000key_1msg/String
+                        time:   [6.3327 ms 6.3365 ms 6.3403 ms]
+                        thrpt:  [1.5772 Melem/s 1.5782 Melem/s 1.5791 Melem/s]
+Found 6 outliers among 40 measurements (15.00%)
+  1 (2.50%) low mild
+  5 (12.50%) high mild
+full_cycle/1x16/1key_10000msg/u64
+                        time:   [3.4096 ms 3.4381 ms 3.4709 ms]
+                        thrpt:  [2.8811 Melem/s 2.9086 Melem/s 2.9329 Melem/s]
+Found 8 outliers among 40 measurements (20.00%)
+  1 (2.50%) low mild
+  1 (2.50%) high mild
+  6 (15.00%) high severe
+full_cycle/1x16/1key_10000msg/String
+                        time:   [9.1555 ms 9.1631 ms 9.1690 ms]
+                        thrpt:  [1.0906 Melem/s 1.0913 Melem/s 1.0922 Melem/s]
+Found 2 outliers among 40 measurements (5.00%)
+  1 (2.50%) high mild
+  1 (2.50%) high severe
+full_cycle/1x16/100key_100msg/u64
+                        time:   [3.6898 ms 3.6981 ms 3.7111 ms]
+                        thrpt:  [2.6946 Melem/s 2.7041 Melem/s 2.7102 Melem/s]
+Found 2 outliers among 40 measurements (5.00%)
+  1 (2.50%) low severe
+  1 (2.50%) high severe
+full_cycle/1x16/100key_100msg/String
+                        time:   [9.7056 ms 9.7221 ms 9.7394 ms]
+                        thrpt:  [1.0268 Melem/s 1.0286 Melem/s 1.0303 Melem/s]
+Found 2 outliers among 40 measurements (5.00%)
+  1 (2.50%) low mild
+  1 (2.50%) high severe
+full_cycle/1x16/10000key_1msg/u64
+                        time:   [19.181 ms 19.200 ms 19.223 ms]
+                        thrpt:  [520.22 Kelem/s 520.82 Kelem/s 521.35 Kelem/s]
+Found 5 outliers among 40 measurements (12.50%)
+  1 (2.50%) low severe
+  2 (5.00%) low mild
+  2 (5.00%) high mild
+full_cycle/1x16/10000key_1msg/String
+                        time:   [24.911 ms 24.938 ms 24.966 ms]
+                        thrpt:  [400.54 Kelem/s 401.00 Kelem/s 401.42 Kelem/s]
+Found 2 outliers among 40 measurements (5.00%)
+  2 (5.00%) high severe
+full_cycle/4x4/1key_10000msg/u64
+                        time:   [1.4531 ms 1.4559 ms 1.4588 ms]
+                        thrpt:  [6.8548 Melem/s 6.8688 Melem/s 6.8819 Melem/s]
+Found 5 outliers among 40 measurements (12.50%)
+  1 (2.50%) low mild
+  3 (7.50%) high mild
+  1 (2.50%) high severe
+full_cycle/4x4/1key_10000msg/String
+                        time:   [3.8679 ms 3.8803 ms 3.8935 ms]
+                        thrpt:  [2.5684 Melem/s 2.5771 Melem/s 2.5854 Melem/s]
+Found 7 outliers among 40 measurements (17.50%)
+  6 (15.00%) high mild
+  1 (2.50%) high severe
+full_cycle/4x4/100key_100msg/u64
+                        time:   [1.6250 ms 1.6287 ms 1.6315 ms]
+                        thrpt:  [6.1292 Melem/s 6.1397 Melem/s 6.1537 Melem/s]
+Found 1 outliers among 40 measurements (2.50%)
+  1 (2.50%) high mild
+full_cycle/4x4/100key_100msg/String
+                        time:   [4.2498 ms 4.2560 ms 4.2620 ms]
+                        thrpt:  [2.3463 Melem/s 2.3496 Melem/s 2.3530 Melem/s]
+Found 2 outliers among 40 measurements (5.00%)
+  2 (5.00%) low mild
+full_cycle/4x4/10000key_1msg/u64
+                        time:   [7.8200 ms 7.8315 ms 7.8455 ms]
+                        thrpt:  [1.2746 Melem/s 1.2769 Melem/s 1.2788 Melem/s]
+Found 4 outliers among 40 measurements (10.00%)
+  3 (7.50%) high mild
+  1 (2.50%) high severe
+full_cycle/4x4/10000key_1msg/String
+                        time:   [10.307 ms 10.326 ms 10.358 ms]
+                        thrpt:  [965.46 Kelem/s 968.41 Kelem/s 970.17 Kelem/s]
+Found 2 outliers among 40 measurements (5.00%)
+  1 (2.50%) high mild
+  1 (2.50%) high severe
+

@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   matching the documented behavior and the missing-key case.
 - The stream returned by `KeyReceiver::into_stream` now terminates when the
   channel is closed, instead of yielding `Err(RecvError::Closed)` forever.
+- `KeySender::send` now releases the key map borrow before `broadcast::Sender::send`,
+  preventing reentrant-drop borrow panics in local mode and lock reentry hazards
+  when value destructors touch the stream.
 
 ## [0.10.0]
 
