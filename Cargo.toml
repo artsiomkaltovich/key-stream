@@ -8,10 +8,6 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/artsiomkaltovich/key-stream"
 
-[features]
-default = []
-bench-variants = []
-
 [dependencies]
 futures = { version = "0.3", default-features = false }
 tokio = { version = "1", features = ["sync", "rt"] }

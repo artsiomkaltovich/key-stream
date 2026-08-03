@@ -49,7 +49,6 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::rc::{Rc, Weak};
-#[cfg(feature = "bench-variants")]
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::sync::broadcast::error::RecvError;
@@ -65,20 +64,16 @@ pub trait Value: Clone + 'static {}
 impl<T: Clone + 'static> Value for T {}
 impl<T: std::hash::Hash + Eq + Clone + 'static> Key for T {}
 
-#[cfg(feature = "bench-variants")]
-struct BenchChannelHandles<V: Value> {
-    sender: broadcast::Sender<V>,
+/// Both handle types for one channel, so `rc_sender` and `arc_sender` can be
+/// compared behind an identical map lookup. Both wrap clones of the same
+/// `broadcast::Sender`, so either delivers to every receiver of the key.
+///
+/// This is a measurement scaffold, not a shipping shape: once the rc-vs-arc
+/// decision is made, one field goes and the struct collapses to that handle.
+struct StreamEntry<V: Value> {
     rc_sender: Rc<broadcast::Sender<V>>,
     arc_sender: Arc<broadcast::Sender<V>>,
 }
-
-#[cfg(feature = "bench-variants")]
-type StreamEntry<V> = BenchChannelHandles<V>;
-#[cfg(not(feature = "bench-variants"))]
-type StreamEntry<V> = broadcast::Sender<V>;
-
-// Bench scaffolding: bench-variants keeps extra handle wrappers (Rc/Arc) for
-// send-variant comparison. Default build stores a plain Sender only.
 type Streams<K, V> = Rc<RefCell<HashMap<K, StreamEntry<V>>>>;
 
 #[doc(hidden)]
@@ -166,13 +161,11 @@ impl<K: Key, V: Value> KeySender<K, V> {
     ///
     /// Returns the number of receivers the message was sent to, or 0 if none.
     pub async fn send(&self, key: &K, value: V) -> usize {
-        self.__bench_send_clone_sender(key, value).await
-    }
-
-    #[doc(hidden)]
-    pub fn __bench_sender_clone_for_key(&self, key: &K) -> Option<Rc<broadcast::Sender<V>>> {
-        let streams = self.streams.borrow();
-        streams.get(key).map(entry_rc_sender_clone)
+        // Provisional: the rc-vs-arc choice is still open and benchmark-driven.
+        // What is settled is that the guard must be released before broadcasting
+        // (hazard A) and that cloning the `broadcast::Sender` itself is the one
+        // option that always loses.
+        self.__bench_send_rc_sender_lookup(key, value).await
     }
 
     #[doc(hidden)]
@@ -186,20 +179,6 @@ impl<K: Key, V: Value> KeySender<K, V> {
     }
 
     #[doc(hidden)]
-    pub async fn __bench_send_clone_sender(&self, key: &K, value: V) -> usize {
-        let sender = {
-            let streams = self.streams.borrow();
-            streams.get(key).map(entry_sender_clone)
-        };
-        if let Some(sender) = sender {
-            sender.send(value).unwrap_or(0)
-        } else {
-            0
-        }
-    }
-
-    #[cfg(feature = "bench-variants")]
-    #[doc(hidden)]
     pub async fn __bench_send_rc_sender_lookup(&self, key: &K, value: V) -> usize {
         let sender = {
             let streams = self.streams.borrow();
@@ -211,7 +190,6 @@ impl<K: Key, V: Value> KeySender<K, V> {
         sender.send(value).unwrap_or(0)
     }
 
-    #[cfg(feature = "bench-variants")]
     #[doc(hidden)]
     pub async fn __bench_send_arc_sender(&self, key: &K, value: V) -> usize {
         let sender = {
@@ -335,42 +313,15 @@ impl<K: Key, V: Value> Drop for KeyReceiver<K, V> {
     }
 }
 
-#[cfg(feature = "bench-variants")]
 fn make_entry<V: Value>(sender: broadcast::Sender<V>) -> StreamEntry<V> {
-    BenchChannelHandles {
-        sender: sender.clone(),
+    StreamEntry {
         rc_sender: Rc::new(sender.clone()),
         arc_sender: Arc::new(sender),
     }
 }
 
-#[cfg(not(feature = "bench-variants"))]
-fn make_entry<V: Value>(sender: broadcast::Sender<V>) -> StreamEntry<V> {
-    sender
-}
-
-#[cfg(feature = "bench-variants")]
 fn entry_sender_ref<V: Value>(entry: &StreamEntry<V>) -> &broadcast::Sender<V> {
-    &entry.sender
-}
-
-#[cfg(not(feature = "bench-variants"))]
-fn entry_sender_ref<V: Value>(entry: &StreamEntry<V>) -> &broadcast::Sender<V> {
-    entry
-}
-
-fn entry_sender_clone<V: Value>(entry: &StreamEntry<V>) -> broadcast::Sender<V> {
-    entry_sender_ref(entry).clone()
-}
-
-#[cfg(feature = "bench-variants")]
-fn entry_rc_sender_clone<V: Value>(entry: &StreamEntry<V>) -> Rc<broadcast::Sender<V>> {
-    Rc::clone(&entry.rc_sender)
-}
-
-#[cfg(not(feature = "bench-variants"))]
-fn entry_rc_sender_clone<V: Value>(entry: &StreamEntry<V>) -> Rc<broadcast::Sender<V>> {
-    Rc::new(entry.clone())
+    &entry.rc_sender
 }
 
 fn entry_subscribe<V: Value>(entry: &StreamEntry<V>) -> broadcast::Receiver<V> {
@@ -767,7 +718,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn test_send_clone_sender_reentrant_drop_no_panic() {
+    async fn test_public_send_reentrant_drop_no_panic() {
         let key_stream = KeyStream::<u64, ReentrantDrop>::new(1);
         let sender = key_stream.sender();
         let mut lagging_receiver = sender.subscribe(1).await;
@@ -808,7 +759,6 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "bench-variants")]
     #[tokio::test(flavor = "current_thread")]
     async fn test_bench_send_arc_sender_delivers_to_receivers() {
         let key_stream = KeyStream::<u64, String>::new(8);

@@ -23,11 +23,10 @@ pub struct Distribution {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum SendWithReceiversVariant {
+    /// Guard held across the broadcast. Unsafe (hazard A: a re-entrant value
+    /// destructor panics); carried only as the zero-cost baseline.
     GuardHeld,
-    CloneSender,
-    #[cfg(feature = "bench-variants")]
     RcSender,
-    #[cfg(feature = "bench-variants")]
     ArcSender,
 }
 
@@ -175,17 +174,10 @@ pub fn full_cycle_elements(mode: Mode, dist: Distribution) -> u64 {
     sends_with + sends_none + recvs + subs_and_drops
 }
 
-#[cfg(feature = "bench-variants")]
-const SEND_VARIANTS: [SendWithReceiversVariant; 4] = [
+const SEND_VARIANTS: [SendWithReceiversVariant; 3] = [
     SendWithReceiversVariant::GuardHeld,
-    SendWithReceiversVariant::CloneSender,
     SendWithReceiversVariant::RcSender,
     SendWithReceiversVariant::ArcSender,
-];
-#[cfg(not(feature = "bench-variants"))]
-const SEND_VARIANTS: [SendWithReceiversVariant; 2] = [
-    SendWithReceiversVariant::GuardHeld,
-    SendWithReceiversVariant::CloneSender,
 ];
 
 pub fn send_variants() -> &'static [SendWithReceiversVariant] {
@@ -195,10 +187,7 @@ pub fn send_variants() -> &'static [SendWithReceiversVariant] {
 pub fn send_variant_label(variant: SendWithReceiversVariant) -> &'static str {
     match variant {
         SendWithReceiversVariant::GuardHeld => "guard_held",
-        SendWithReceiversVariant::CloneSender => "clone_sender",
-        #[cfg(feature = "bench-variants")]
         SendWithReceiversVariant::RcSender => "rc_sender",
-        #[cfg(feature = "bench-variants")]
         SendWithReceiversVariant::ArcSender => "arc_sender",
     }
 }
@@ -352,14 +341,9 @@ pub async fn send_messages_with_variant<V: BenchValue>(
                     SendWithReceiversVariant::GuardHeld => {
                         sender.__bench_send_guard_held(&key, value).await
                     }
-                    SendWithReceiversVariant::CloneSender => {
-                        sender.__bench_send_clone_sender(&key, value).await
-                    }
-                    #[cfg(feature = "bench-variants")]
                     SendWithReceiversVariant::RcSender => {
                         sender.__bench_send_rc_sender_lookup(&key, value).await
                     }
-                    #[cfg(feature = "bench-variants")]
                     SendWithReceiversVariant::ArcSender => {
                         sender.__bench_send_arc_sender(&key, value).await
                     }

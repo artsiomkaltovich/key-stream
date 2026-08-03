@@ -181,8 +181,16 @@ single-threaded, so `16x1` and `4x4` show scheduling interleave rather than lock
 the case where `guard_held` blocks writers cannot appear until a real shared backend runs on a
 multi-thread runtime.
 
-Current branch status: shipping `KeySender::send` uses `clone_sender` — the most expensive of the
-correct options — and `guard_held` survives only as a bench helper.
+**Current status — `clone_sender` is retired.** It lost in all 120 cell-measurements across two
+architectures (+5.77 ns on M1 Pro, +9.29 ns on EPYC 7763), never once winning, so it has been
+removed from both the library and the bench. The `bench-variants` feature is gone with it: the map
+entry now always carries both an `Rc<Sender>` and an `Arc<Sender>`, and the bench measures exactly
+three variants in one run — `guard_held` / `rc_sender` / `arc_sender`.
+
+`KeySender::send` provisionally uses the `rc_sender` path. **The rc-vs-arc decision is still open**
+and is what the remaining benchmark exists to settle; it is a coin flip on both machines measured so
+far (+0.12 ns on M1 Pro, −0.09 ns on EPYC), so it needs contended data from a real shared backend
+before it can be called.
 
 ### Why `arc_sender` must be measured, not inferred
 

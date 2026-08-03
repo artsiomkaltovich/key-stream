@@ -4,14 +4,17 @@ name: Benchmarks
 # these runners are x86_64, where the cost of an atomic RMW is dominated by the
 # `lock` prefix rather than by memory ordering.
 #
-# BOTH FEATURE CONFIGURATIONS RUN IN ONE JOB, SEQUENTIALLY, ON PURPOSE.
-# They used to run as a `strategy.matrix`, which put them on different runners —
-# and that silently destroyed comparability. Evidence: `send_no_receivers` is
-# byte-identical code in both builds and reproduces to 0.01 ns between configs
-# on a quiet local machine, but read 23.0 ns and 12.2 ns in two matrix jobs.
-# `lock`-op latency varies several-fold across the CPU models in GitHub's pool
-# (Intel Xeon vs AMD EPYC, different generations), so numbers from two jobs
-# cannot be compared at all. One job, one CPU, or the run answers nothing.
+# ONE RUN, ONE ARTIFACT SET. The bench measures three send variants in a single
+# pass with per-pass rotation: `guard_held` (guard spans the broadcast — unsafe,
+# baseline only), `rc_sender`, and `arc_sender`. There is no feature flag and no
+# second configuration; everything needed for the rc-vs-arc decision comes out of
+# one file.
+#
+# An earlier layout ran two feature configs as a `strategy.matrix`, which put them
+# on different runners and silently destroyed comparability — `send_no_receivers`
+# is byte-identical in both builds and reproduces to 0.01 ns locally, but read
+# 23.0 and 12.2 ns across two jobs. `lock`-op latency varies several-fold across
+# GitHub's CPU pool, so cross-job comparison is meaningless. Keep it one job.
 #
 # READ THE NUMBERS WITH CARE even so. Shared VMs are noisy; run-to-run spread
 # here is far worse than on a quiet laptop. Use `min`, and treat this as
@@ -28,7 +31,7 @@ on:
 jobs:
   bench:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: Set up Rust toolchain
@@ -62,46 +65,32 @@ jobs:
             lscpu || true
           } | tee "$OUT/machine.txt"
 
-      # Both configurations must compile and pass; catches feature-gate rot.
-      - name: Tests and clippy (both configs)
+      - name: Tests and clippy
         run: |
           cargo test --locked
           cargo clippy --locked --all-targets -- -D warnings
-          cargo test --locked --features bench-variants
-          cargo clippy --locked --all-targets --features bench-variants -- -D warnings
 
       # Full matrix, no filter, no `--quick`. `--quick` collapses the iteration
       # count, which starves the side-channel phase accumulator and produces a
-      # breakdown that cannot be compared against the baselines in
-      # bench-results/. Order matters: the production-shape run goes first so
-      # it sees the least-warmed machine, biasing against the config whose
-      # numbers feed Phase 1's decision gate rather than for it.
-      - name: Benchmark — production shape (bench-variants off)
-        run: cargo bench --locked --bench key_stream -- --noplot | tee "$OUT/off.raw.txt"
+      # breakdown that cannot be compared against bench-results/.
+      - name: Benchmark (full matrix)
+        run: cargo bench --locked --bench key_stream -- --noplot | tee "$OUT/bench.raw.txt"
 
-      - name: Benchmark — handle comparison (bench-variants on)
-        run: |
-          cargo bench --locked --features bench-variants --bench key_stream -- --noplot \
-            | tee "$OUT/on.raw.txt"
-
+      # 60 IDs x 8 phases (create, subscribe, 3 send variants, send_no_receivers,
+      # recv, drop). Guards against a filter or variant change silently shrinking
+      # coverage while still producing plausible-looking output.
       - name: Extract and check coverage
         run: |
-          fail=0
-          check() {
-            local raw="$1" want_rows="$2" label="$3"
-            grep -E ',(phase|FAILED)/?' "$raw" > "${raw%.raw.txt}.phases.csv" || true
-            local ids rows disc
-            ids=$(grep -c '^full_cycle/' "$raw" || true)
-            rows=$(grep -c ',phase,' "$raw" || true)
-            disc=$(grep -c ',FAILED' "$raw" || true)
-            echo "$label: ids=$ids phase_rows=$rows discarded=$disc (want 60 / $want_rows / 0)"
-            [ "$ids" -eq 60 ] || { echo "::error::$label expected 60 IDs, got $ids"; fail=1; }
-            [ "$rows" -eq "$want_rows" ] || { echo "::error::$label expected $want_rows phase rows, got $rows"; fail=1; }
-            [ "$disc" -eq 0 ] || echo "::warning::$label had $disc discarded-sample rows"
-          }
-          check "$OUT/off.raw.txt" 420 "off"
-          check "$OUT/on.raw.txt"  540 "on"
-          exit $fail
+          grep -E ',(phase|FAILED)/?' "$OUT/bench.raw.txt" > "$OUT/phases.csv" || true
+          ids=$(grep -c '^full_cycle/' "$OUT/bench.raw.txt" || true)
+          rows=$(grep -c ',phase,' "$OUT/bench.raw.txt" || true)
+          disc=$(grep -c ',FAILED' "$OUT/bench.raw.txt" || true)
+          cols=$(grep ',phase,' "$OUT/bench.raw.txt" | awk -F, '{print NF}' | sort -u | tr '\n' ' ')
+          echo "ids=$ids phase_rows=$rows discarded=$disc column_counts=[$cols]"
+          [ "$ids" -eq 60 ] || { echo "::error::expected 60 IDs, got $ids"; exit 1; }
+          [ "$rows" -eq 480 ] || { echo "::error::expected 480 phase rows, got $rows"; exit 1; }
+          [ "$(echo $cols | wc -w)" -eq 1 ] || { echo "::error::ragged CSV: [$cols]"; exit 1; }
+          [ "$disc" -eq 0 ] || echo "::warning::$disc discarded-sample rows"
 
       - name: Upload benchmark artifacts
         if: always()
