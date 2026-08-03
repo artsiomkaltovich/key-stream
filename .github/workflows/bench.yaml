@@ -1,0 +1,111 @@
+name: Benchmarks
+
+# Cross-architecture check. Local development happens on arm64 (Apple Silicon);
+# these runners are x86_64, where the cost of an atomic RMW is dominated by the
+# `lock` prefix rather than by memory ordering.
+#
+# ONE RUN, ONE ARTIFACT SET, from a single run on a single runner, by design.
+#
+# An earlier layout split benchmarking across two jobs on different runners and
+# silently destroyed comparability — `send_no_receivers` is byte-identical and
+# reproduces to 0.01 ns locally, but read 23.0 and 12.2 ns across two runners.
+# `lock`-op latency varies several-fold across GitHub's CPU pool, so cross-runner
+# comparison is meaningless. Keep it one job.
+#
+# READ THE NUMBERS WITH CARE even so. Shared VMs are noisy; run-to-run spread
+# here is far worse than on a quiet laptop. Use `min`, and treat this as
+# confirmation of large directional effects rather than a way to resolve
+# sub-nanosecond differences.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: bench-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo registry
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      # Artifacts are written OUTSIDE the checkout. Writing them into the repo
+      # made `git status --porcelain` non-empty, so every run self-reported as
+      # `-dirty` — inverting the meaning of a marker whose entire job is to warn
+      # that the measured code does not match the recorded commit.
+      - name: Prepare output dir
+        run: echo "OUT=$RUNNER_TEMP/bench" >> "$GITHUB_ENV"
+
+      - name: Record machine
+        run: |
+          mkdir -p "$OUT"
+          {
+            echo "runner_os=${{ runner.os }}"
+            echo "runner_arch=${{ runner.arch }}"
+            echo "nproc=$(nproc)"
+            echo "---"
+            lscpu || true
+          } | tee "$OUT/machine.txt"
+
+      # Fail fast on a compile error, before the 60-minute measurement step. Builds the
+      # bench binary with the same `bench` profile that step uses, so the artifacts are
+      # reused and this costs nothing beyond surfacing the error under its own name.
+      # Kept after "Record machine" on purpose: `$OUT` then already exists, so a
+      # compile failure still uploads machine.txt and reports one red step, not two.
+      #
+      # Correctness is ci.yml's job. Running tests and clippy here duplicated it on
+      # every master push and PR, and neither exercises the benchmark itself.
+      - name: Compile benchmarks
+        run: cargo bench --locked --bench key_stream --no-run
+
+      # Full matrix, no filter, no `--quick`. `--quick` collapses the iteration
+      # count, which starves the side-channel phase accumulator and produces a
+      # breakdown that cannot be compared against bench-results/.
+      - name: Benchmark (full matrix)
+        run: cargo bench --locked --bench key_stream -- --noplot | tee "$OUT/bench.raw.txt"
+
+      # 120 IDs x 6 phases (create, subscribe, send_with_receivers,
+      # send_no_receivers, recv, drop). Guards against a filter change silently
+      # shrinking coverage while still producing plausible-looking output.
+      - name: Extract and check coverage
+        run: |
+          grep -E ',(phase|FAILED)/?' "$OUT/bench.raw.txt" > "$OUT/phases.csv" || true
+          ids=$(grep -c '^full_cycle/' "$OUT/bench.raw.txt" || true)
+          rows=$(grep -c ',phase,' "$OUT/bench.raw.txt" || true)
+          disc=$(grep -c ',FAILED' "$OUT/bench.raw.txt" || true)
+          cols=$(grep ',phase,' "$OUT/bench.raw.txt" | awk -F, '{print NF}' | sort -u | tr '\n' ' ' || true)
+          echo "ids=$ids phase_rows=$rows discarded=$disc column_counts=[$cols]"
+          [ "$ids" -eq 120 ] || { echo "::error::expected 120 IDs, got $ids"; exit 1; }
+          [ "$rows" -eq 720 ] || { echo "::error::expected 720 phase rows, got $rows"; exit 1; }
+          [ "$(echo $cols | wc -w)" -eq 1 ] || { echo "::error::ragged CSV: [$cols]"; exit 1; }
+          [ "$disc" -eq 0 ] || echo "::warning::$disc discarded-sample rows"
+
+      - name: Upload benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: key-stream-bench-${{ github.run_id }}
+          path: ${{ runner.temp }}/bench
+          if-no-files-found: error
+          retention-days: 14
