@@ -27,11 +27,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      - name: Build
-        run: cargo build --verbose --locked
-      - name: Lint (clippy)
-        run: cargo clippy --locked --all-targets -- -D warnings
+      # Cheapest check first: `cargo fmt --check` compiles nothing, so a formatting
+      # slip fails in seconds instead of behind a full clippy build.
       - name: Format check
         run: cargo fmt --all -- --check
+      - name: Lint (clippy)
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Build
+        run: cargo build --verbose --locked
       - name: Run tests
         run: cargo test --workspace --verbose --locked
