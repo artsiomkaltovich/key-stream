@@ -175,6 +175,14 @@ where
         receiver.try_recv()
     }
 
+    /// Receive by blocking the calling thread.
+    ///
+    /// # Panics
+    ///
+    /// Panics if called from within an asynchronous execution context. This is
+    /// [`tokio::sync::broadcast::Receiver::blocking_recv`]'s contract, inherited
+    /// unchanged: call it from a dedicated thread (for example one from
+    /// `spawn_blocking`), never from inside a runtime.
     pub fn blocking_recv(&mut self) -> Result<V, RecvError> {
         let Some(receiver) = self.receiver.as_mut() else {
             return Err(RecvError::Closed);
@@ -220,6 +228,25 @@ where
     }
 }
 
+/// Halve the map's capacity once it is less than half full, so a workload that
+/// subscribed to many keys and then released them does not hold the peak
+/// allocation forever.
+///
+/// Two guards keep this from being counterproductive:
+///
+/// - `cap > 64` leaves small maps alone entirely. Shrinking them saves a trivial
+///   amount and the reallocation is pure loss.
+/// - halving rather than `shrink_to_fit` leaves headroom, so re-subscribing a few
+///   keys does not immediately force a grow.
+///
+/// Called only from `KeyReceiverCore::drop`, i.e. only when a key was just removed.
+///
+/// **Known limitation:** a workload that repeatedly cycles the key count across a
+/// power-of-two boundary can thrash — grow to `2n`, drop below `n`, shrink to `n`,
+/// grow again — paying a rehash each way. The threshold is deliberately not
+/// configurable; if that pattern ever shows up in practice, the fix is a smarter
+/// policy (hysteresis, or shrinking on a schedule rather than on every removal)
+/// rather than a knob for callers to guess at.
 pub(crate) fn optimize_dict_mem<K, H>(streams: &mut HashMap<K, H>)
 where
     K: Eq + Hash,

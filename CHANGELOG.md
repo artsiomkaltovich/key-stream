@@ -69,8 +69,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   any more, so the runtime is no longer pulled into downstream builds; only `sync` is
   required. Tests and benches keep it via dev-dependencies.
 - Library code contains no `unwrap` or `expect`, enforced by
-  `clippy::unwrap_used = "deny"` and `clippy::expect_used = "deny"`. The only
-  remaining panic in the public API is `KeyStream::new` on a zero capacity.
+  `clippy::unwrap_used = "deny"` and `clippy::expect_used = "deny"`. Two documented
+  panics remain: `KeyStream::new` on a zero capacity, and `KeyReceiver::blocking_recv`
+  if called from within an async context — the latter inherited from
+  `tokio::sync::broadcast::Receiver::blocking_recv` and now documented on our method
+  too.
 - Replaced archived `actions-rs/toolchain` with
   `dtolnay/rust-toolchain@stable` in CI and publish workflows.
 

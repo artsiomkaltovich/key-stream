@@ -68,10 +68,16 @@ jobs:
             lscpu || true
           } | tee "$OUT/machine.txt"
 
-      - name: Tests and clippy
-        run: |
-          cargo test --locked
-          cargo clippy --locked --all-targets -- -D warnings
+      # Fail fast on a compile error, before the 60-minute measurement step. Builds the
+      # bench binary with the same `bench` profile that step uses, so the artifacts are
+      # reused and this costs nothing beyond surfacing the error under its own name.
+      # Kept after "Record machine" on purpose: `$OUT` then already exists, so a
+      # compile failure still uploads machine.txt and reports one red step, not two.
+      #
+      # Correctness is ci.yml's job. Running tests and clippy here duplicated it on
+      # every master push and PR, and neither exercises the benchmark itself.
+      - name: Compile benchmarks
+        run: cargo bench --locked --bench key_stream --no-run
 
       # Full matrix, no filter, no `--quick`. `--quick` collapses the iteration
       # count, which starves the side-channel phase accumulator and produces a
