@@ -28,6 +28,9 @@
 //! ```
 //!
 //! `local` — same API, single-threaded, and able to carry `Rc` values:
+//! > **Note**
+//! > Broadcast fanout clones one value per receiver. Cloning `Rc<T>` is a cheap
+//! > refcount bump, while cloning `String` copies its bytes.
 //!
 //! ```
 //! use key_stream::local::KeyStream;
