@@ -2,7 +2,7 @@
 name = "key-stream"
 description = "A library for async key streaming."
 authors = ["Artsiom Kaltovich <kaltovichartyom@gmail.com>"]
-version = "0.10.0"
+version = "0.11.0"
 edition = "2024"
 license = "MIT"
 readme = "README.md"
