@@ -271,6 +271,7 @@ mod tests {
     use std::rc::Rc;
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, PoisonError, RwLock};
+    use tokio::task::JoinSet;
     use tokio::time::{Duration, timeout};
 
     type LocalStreams<K, V> = Rc<RefCell<HashMap<K, Rc<broadcast::Sender<V>>>>>;
@@ -578,37 +579,26 @@ mod tests {
         assert_eq!(key_stream.n_keys(), 0);
     }
 
-    async fn concurrency_body<B: Backend<String, String>>() {
-        let key_stream = KeyStreamCore::<B, String, String>::new(8);
+    async fn concurrency_body<B: Backend<i32, i32>>()
+    -> (KeyStreamCore<B, i32, i32>, Vec<impl Future<Output = i32>>) {
+        let key_stream = KeyStreamCore::<B, i32, i32>::new(8);
         let sender = key_stream.sender();
-        let keys = vec![
-            "k0".to_string(),
-            "k1".to_string(),
-            "k2".to_string(),
-            "k0".to_string(),
-            "k1".to_string(),
-            "k2".to_string(),
-            "k0".to_string(),
-            "k1".to_string(),
-            "k2".to_string(),
-            "k0".to_string(),
-            "k1".to_string(),
-            "k2".to_string(),
-        ];
+        let keys = vec![0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2];
 
-        let tasks = keys.into_iter().enumerate().map(|(i, key)| {
-            let sender = sender.clone();
-            async move {
-                let mut receiver = sender.subscribe(key.clone());
-                let value = format!("value-{i}");
-                assert!(sender.send(&key, value) > 0);
-                receiver.recv().await.expect("recv failed")
-            }
-        });
-
-        let results = join_all(tasks).await;
-        assert_eq!(results.len(), 12);
-        assert_eq!(key_stream.n_keys(), 0);
+        let tasks = keys
+            .into_iter()
+            .enumerate()
+            .map(|(i, key)| {
+                let sender = sender.clone();
+                async move {
+                    let mut receiver = sender.subscribe(key);
+                    let value = i;
+                    assert!(sender.send(&key, value as i32) > 0);
+                    receiver.recv().await.expect("recv failed")
+                }
+            })
+            .collect::<Vec<_>>();
+        (key_stream, tasks)
     }
 
     #[derive(Clone, Debug)]
@@ -931,11 +921,30 @@ mod tests {
     }
     #[tokio::test]
     async fn concurrency_local() {
-        guarded(concurrency_body::<LocalStreams<String, String>>()).await
+        guarded(async move {
+            let (key_stream, tasks) = concurrency_body::<LocalStreams<i32, i32>>().await;
+            let results = join_all(tasks).await;
+            assert_eq!(results.len(), 12);
+            assert_eq!(key_stream.n_keys(), 0);
+        })
+        .await
     }
     #[tokio::test(flavor = "multi_thread")]
     async fn concurrency_shared() {
-        guarded(concurrency_body::<SharedStreams<String, String>>()).await
+        guarded(async move {
+            let (key_stream, tasks) = concurrency_body::<SharedStreams<i32, i32>>().await;
+            let mut set = JoinSet::new();
+            for task in tasks {
+                set.spawn(task);
+            }
+            let mut results = Vec::new();
+            while let Some(result) = set.join_next().await {
+                results.push(result.expect("task failed"));
+            }
+            assert_eq!(results.len(), 12);
+            assert_eq!(key_stream.n_keys(), 0);
+        })
+        .await
     }
     async fn recv_rc_struct_local_body() {
         #[derive(Debug)]
@@ -972,17 +981,18 @@ mod tests {
 
         let key_stream = shared::KeyStream::<String, String>::new(CAPACITY);
         let sender = key_stream.sender();
-        let tasks = (0..N_TASKS).map(|i| {
+        let mut join_set = JoinSet::new();
+        for i in 0..N_TASKS {
             let sender = sender.clone();
-            tokio::spawn(async move {
+            join_set.spawn(async move {
                 let key = format!("k{}", i % N_KEYS);
                 let mut receiver = sender.subscribe(key.clone());
                 assert!(sender.send(&key, format!("value-{i}")) > 0);
                 let _ = receiver.recv().await.expect("recv failed");
-            })
-        });
-        for task in tasks {
-            task.await.expect("task failed");
+            });
+        }
+        while let Some(task) = join_set.join_next().await {
+            task.expect("task failed");
         }
         assert_eq!(key_stream.n_keys(), 0);
     }
